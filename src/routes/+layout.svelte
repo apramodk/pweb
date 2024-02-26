@@ -3,7 +3,7 @@
     import { Navbar } from "$lib/index";
 </script>
 
-<body data-theme="luxury">
+<body data-theme="dim">
     <Navbar/>
     <slot>
     </slot>
