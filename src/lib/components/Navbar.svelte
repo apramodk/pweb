@@ -1,6 +1,5 @@
 <script lang="ts">
     import { base } from '$app/paths';
-	import { text } from '@sveltejs/kit';
     export let isDarkMode:boolean=false;
     let txtc = ["","text-base-content"];
 </script>
@@ -11,7 +10,7 @@
     </div>
     <div class="flex-none">
         <nav>
-                <a href="{base}/HCI"    class="btn btn-ghost normal-case {txtc[Number(isDarkMode)]} hover:text-neutral-content">HCI</a>
+                <a href="{base}/HCI" class="btn btn-ghost normal-case {txtc[Number(isDarkMode)]} hover:text-neutral-content">HCI</a>
         </nav>
         <div class="form-control" >
             <label class="label cursor-pointer">
