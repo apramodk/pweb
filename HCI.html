@@ -5,23 +5,23 @@
 		<link rel="icon" href="./favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
-		<link href="./_app/immutable/assets/0.DoZzVccV.css" rel="stylesheet">
-		<link href="./_app/immutable/assets/3.DhN-1NXc.css" rel="stylesheet">
-		<link rel="modulepreload" href="./_app/immutable/entry/start.DfH-NCkQ.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/entry.CO3Y54m-.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/scheduler.DAHDWDpz.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/paths.CAH2-5NH.js">
-		<link rel="modulepreload" href="./_app/immutable/entry/app.B9T6fkXy.js">
-		<link rel="modulepreload" href="./_app/immutable/chunks/index.KXGGlMU6.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/0.CnzEinlc.js">
-		<link rel="modulepreload" href="./_app/immutable/nodes/3.BxYF39ZK.js">
+		<link href="./_app/immutable/assets/0.BCpKPMMV.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/3.COs_Ht0F.css" rel="stylesheet">
+		<link rel="modulepreload" href="./_app/immutable/entry/start.O8op3VQh.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/entry.BE3j1_AZ.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/scheduler.DJEsDRqV.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/paths.BPcnQqzC.js">
+		<link rel="modulepreload" href="./_app/immutable/entry/app.WoLJ01Xm.js">
+		<link rel="modulepreload" href="./_app/immutable/chunks/index.BLFiXMRS.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/0.BfPhR1Z3.js">
+		<link rel="modulepreload" href="./_app/immutable/nodes/3.BVNnfE3N.js">
 	</head>
 	<body data-sveltekit-preload-data="hover">
-		<div style="display: contents">  <body data-theme="luxury" class="svelte-103skn1"><div class="navbar bg-base-300" data-svelte-h="svelte-1w41bri"><div class="flex-1"><a href="./" class="btn btn-ghost normal-case text-xl text-primary hover:text-secondary hover:bg-primary">APK</a></div> <div class="flex-none"><nav><a href="./HCI" class="btn btn-ghost normal-case text-primary hover:text-secondary hover:bg-primary">HCI</a></nav></div></div> <main class="backg svelte-1yoo1t8"><div class="Card_wrapper svelte-1yoo1t8"><div class="card svelte-1yoo1t8" id="card"><h2 data-svelte-h="svelte-1kp1ken">LED Game</h2> <p data-svelte-h="svelte-1qxty2f">Simple LED game controlled by capacitive touch sensors</p> <button data-svelte-h="svelte-oi0jh5">Read More</button></div></div> </main> </body> 
+		<div style="display: contents">  <body data-theme="dim" class="svelte-103skn1"><div class="navbar bg-base-300" data-svelte-h="svelte-pd4xi6"><div class="flex-1"><a href="./" class="btn btn-ghost normal-case text-xl text-primary hover:text-neutral-content">APK</a></div> <div class="flex-none"><nav><a href="./HCI" class="btn btn-ghost normal-case text-primary hover:text-neutral-content">HCI</a></nav></div></div> <main class="backg svelte-1yoo1t8"><button class="btn bg-neutral-content text-accent-content hover:text-neutral-content h-40"><div><h2>LED Game</h2> <p>Simple LED game controlled by capacitive touch sensors</p></div></button> <dialog id="my_modal_1" class="modal"><div class="modal-box overflow-y-scroll h-screen max-w-none w-80vw"><div class="modal-header flex align-baseline justify-between h-10"><div><h2 class="text-primary text-xl">LED Game</h2> <p>Simple LED game controlled by capacitive touch sensors</p></div> <div><button class="btn hover:text-error" data-svelte-h="svelte-wjnzko">X</button></div></div> <div class="modal-body m-10 bg-slate-400 p-10 rounded-md text-neutral"><div class="report" data-svelte-h="svelte-xdkfww"><p><strong>Introduction:</strong> The provided code implements a simple LED game controlled by capacitive touch sensors. The game utilizes an 8x8 LED matrix to display the game state and four capacitive sensors as input devices. The objective of the game is to press the correct capacitive sensor corresponding to the LED tile at the bottom row.</p> <p><strong>Components:</strong></p> <ul><li>LED Matrix: An 8x8 LED matrix is used to represent the game board. Each LED corresponds to a pixel in the game grid.</li> <li>Capacitive Sensors: Four capacitive sensors are employed as input devices. These sensors detect touch inputs and trigger corresponding actions in the game.</li> <li>Arduino Board: The code is designed to run on an Arduino board, which provides the necessary hardware interface for controlling the LED matrix and reading sensor inputs.</li></ul> <div class="flex justify-center p-5"><div><iframe width="560" height="315" src="https://www.youtube.com/embed/0R-9baJcEcI?si=BwuiWXOWA6UuVAY3" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div> </div> <p><strong>Initialization:</strong> The code begins with the initialization of necessary variables and pin configurations. Two arrays, <code>row</code> and <code>col</code>, store the pin numbers for rows and columns of the LED matrix, respectively. An array of <code>CapacitiveSensor</code> objects, <code>buttonPins</code>, is created to handle capacitive input from the sensors. Other variables like <code>pixels</code>, <code>currentMillis</code>, <code>prevMillis</code>, <code>sensorMillis</code>, <code>lives</code>, and <code>score</code> are initialized.</p> <p><strong>Main Loop:</strong> The <code>loop()</code> function contains the main game logic and is executed continuously. It updates the game state, handles input from capacitive sensors, and refreshes the LED matrix display. The game checks for button presses using capacitive sensors and updates the game state accordingly. Tiles are moved down one row, and a new tile is generated at the top row periodically.</p> <p><strong>Game Logic:</strong> The <code>moveTilesDown()</code> function moves existing tiles down one row, while the <code>generateNewTile()</code> function randomly generates a new tile at the top row. Button presses are detected using capacitive sensors. If the correct button is pressed, the score is incremented; otherwise, lives are decremented.</p> <p><strong>Screen Refresh:</strong> The <code>refreshScreen()</code> function updates the LED matrix display by iterating over rows and columns. It turns on LEDs where the row is <code>HIGH</code> and the column is <code>LOW</code>, representing the intersection of rows and columns. Pixels are turned off by setting the column pin to <code>HIGH</code> when the pixel state is <code>LOW</code>.</p></div></div></div></dialog> </main> </body> 
 			
 			<script>
 				{
-					__sveltekit_4dzgu5 = {
+					__sveltekit_vofeqc = {
 						base: new URL(".", location).pathname.slice(0, -1),
 						assets: "/sveltekit-github-pages"
 					};
@@ -31,8 +31,8 @@
 					const data = [null,null];
 
 					Promise.all([
-						import("./_app/immutable/entry/start.DfH-NCkQ.js"),
-						import("./_app/immutable/entry/app.B9T6fkXy.js")
+						import("./_app/immutable/entry/start.O8op3VQh.js"),
+						import("./_app/immutable/entry/app.WoLJ01Xm.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 3],
