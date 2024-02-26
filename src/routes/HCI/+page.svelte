@@ -1,19 +1,10 @@
 <script lang="ts">
     import {Card} from "$lib/index"
-    let expanded = false;
-    let expandedBackground = false;
-
-    function handleClick() {
-        expanded = !expanded;
-        expandedBackground = !expandedBackground;
-        console.log(expanded, expandedBackground)
-    }
 
 </script>
 
 
-<main class="{expanded ? "backd" : "backg"}">
-
+<main class="card w-max m-10">
     <Card title="LED Game" description="Simple LED game controlled by capacitive touch sensors"isModalOpen={false}>
         <div class="report">
             <p><strong>Introduction:</strong> The provided code implements a simple LED game controlled by capacitive touch sensors. The game utilizes an 8x8 LED matrix to display the game state and four capacitive sensors as input devices. The objective of the game is to press the correct capacitive sensor corresponding to the LED tile at the bottom row.</p>
@@ -36,68 +27,3 @@
         </div> 
     </Card>
 </main>
-
-<style>
-    .backg {
-        display: flex;
-        width:  100%;
-        justify-content: center;
-        align-items: center;
-    }
-    .backd {
-        display: flex;
-        width:  100%;
-        justify-content: center;
-        align-items: center;
-        backdrop-filter: blur(10px);
-    }
-    .Card_wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 20rem;
-    }
-    .card {
-        background-color: #f3f4f6;
-        width: 100%;
-        max-width: 300px;
-        padding: 1rem;
-        margin: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-    .expanded {
-        display: flex;
-        flex-direction: column;
-        background-color: #f3f4f6;
-        width: fit-content;
-        /* max-width: 300px; */
-        padding: 1rem;
-        margin: 1rem;
-        border-radius: 10px;
-        /* blur the background */
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        height: fit-content;
-        margin-top: 15rem;
-        max-height: 30rem;
-        overflow-y: scroll;
-        z-index: 100;
-        position:fixed;
-    }
-    .cardHeader {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .cardTitle {
-        display: flex;
-        flex-direction: column;
-    }
-    .cardToggleBack {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-</style>
