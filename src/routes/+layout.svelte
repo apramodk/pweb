@@ -1,5 +1,18 @@
 <script lang="ts">
     import "tailwindcss/tailwind.css";
+    import { Navbar } from "$lib/index";
 </script>
 
-<slot />
+<body data-theme="luxury">
+    <Navbar/>
+    <slot>
+    </slot>
+</body>
+
+
+<style>
+    body{
+        width: 100vw;
+        height: 100vh;
+    }
+</style>
