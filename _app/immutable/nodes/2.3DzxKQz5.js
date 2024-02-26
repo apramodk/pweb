@@ -1,0 +1,7 @@
+import{s as o,n as t}from"../chunks/scheduler.DAHDWDpz.js";import{S as i,i as l,e as c,c as p,k as m,l as h,g as d,d as u}from"../chunks/index.KXGGlMU6.js";function v(n){let e,a=`<div class="card card-side text-primary"><div class="card-body"><h2 class="card-title text-center"><h1 class="text-4xl"><span class="hover:text-base-content">Akash</span> <span class="hover:text-base-content">Pramod</span> <span class="hover:text-base-content">Kumar</span></h1></h2> <p><span class="hover:text-error">Computer</span> <span class="hover:text-error">Science</span></p> <span>My name is 
+                <span class="text-warning">Akash Pramod Kumar</span>.
+                I&#39;m currently attending the 
+                <span class="text-orange-600">University of Tennessee Knoxville</span> <br/>
+                studying computer science. I made this website to document my personal projects as well as     <br/>
+                post my learning material for anyone to see! This home page should give a quick preview of     <br/>
+                some of the things you&#39;ll find on my website.                                                  <br/></span></div></div>`;return{c(){e=c("main"),e.innerHTML=a,this.h()},l(s){e=p(s,"MAIN",{class:!0,"data-svelte-h":!0}),m(e)!=="svelte-1oiqxbp"&&(e.innerHTML=a),this.h()},h(){h(e,"class","svelte-181hduy")},m(s,r){d(s,e,r)},p:t,i:t,o:t,d(s){s&&u(e)}}}class f extends i{constructor(e){super(),l(this,e,null,v,o,{})}}export{f as component};
