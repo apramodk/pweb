@@ -3,11 +3,10 @@
     import { Navbar } from "$lib/index";
     
     let isDarkMode:boolean;
-    let theme = [ "retro", "forest"];
-    let cls = ["","bg-base-content"];
+    let theme = [ "retro", "dim"];
 </script>
 
-<body data-theme={theme[Number(isDarkMode)]} class={cls[Number(isDarkMode)]}>
+<body data-theme={theme[Number(isDarkMode)]}>
     <Navbar bind:isDarkMode={isDarkMode}/>
     <slot>
     </slot>

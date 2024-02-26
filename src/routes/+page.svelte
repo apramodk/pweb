@@ -1,5 +1,5 @@
 <main>
-    <div class="card card-side text-primary-content">
+    <div class="card card-side text-base-content">
         <div class="card-body">
             <h2 class="card-title text-center">
                 <h1 class="text-4xl">
