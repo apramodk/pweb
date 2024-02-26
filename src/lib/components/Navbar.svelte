@@ -14,7 +14,7 @@
         </nav>
         <div class="form-control" >
             <label class="label cursor-pointer">
-                <input type="checkbox" class="toggle" bind:checked={isDarkMode} />
+                <input type="checkbox" class="toggle hover:bg-secondary" bind:checked={isDarkMode} />
             </label>
         </div>
     </div>
