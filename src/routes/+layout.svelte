@@ -15,6 +15,8 @@
 
 <style>
     body{
+        background-image: url('$lib/images/bf_gif.gif');
+        background-size: cover;
         width: 100vw;
         min-height: 100vh;
     }

@@ -4,7 +4,7 @@
     let txtc = ["","text-base-content"];
 </script>
 
-<div class="navbar bg-base-300 sticky top-0 z-10">
+<div class="navbar bg-base-300 opacity-50 sticky top-0 z-10">
     <div class="flex-1">
         <a href="{base}/" class="btn btn-ghost normal-case text-xl {txtc[Number(isDarkMode)]} hover:text-neutral-content">APK</a>
     </div>
