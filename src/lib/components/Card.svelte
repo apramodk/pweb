@@ -5,7 +5,7 @@
 </script>
 
 
-<button class="btn bg-neutral-content text-accent-content hover:text-neutral-content h-40" on:click={() => isModalOpen = true}>
+<button class="btn bg-neutral-content text-accent-content hover:text-neutral-content h-40 shadow-lg" on:click={() => isModalOpen = true}>
     <div>
         <h2>{title}</h2>
         <p>{description}</p>

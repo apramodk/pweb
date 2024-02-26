@@ -1,14 +1,22 @@
 <script lang="ts">
     import { base } from '$app/paths';
+	import { text } from '@sveltejs/kit';
+    export let isDarkMode:boolean=false;
+    let txtc = ["","text-base-content"];
 </script>
 
 <div class="navbar bg-base-300">
     <div class="flex-1">
-        <a href="{base}/" class="btn btn-ghost normal-case text-xl text-primary hover:text-neutral-content">APK</a>
+        <a href="{base}/" class="btn btn-ghost normal-case text-xl {txtc[Number(isDarkMode)]} hover:text-neutral-content">APK</a>
     </div>
     <div class="flex-none">
         <nav>
-                <a href="{base}/HCI"    class="btn btn-ghost normal-case text-primary hover:text-neutral-content">HCI</a>
+                <a href="{base}/HCI"    class="btn btn-ghost normal-case {txtc[Number(isDarkMode)]} hover:text-neutral-content">HCI</a>
         </nav>
+        <div class="form-control" >
+            <label class="label cursor-pointer">
+                <input type="checkbox" class="toggle" bind:checked={isDarkMode} />
+            </label>
+        </div>
     </div>
 </div>

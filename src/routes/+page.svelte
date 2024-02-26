@@ -1,18 +1,18 @@
 <main>
-    <div class="card card-side text-primary">
+    <div class="card card-side text-primary-content">
         <div class="card-body">
             <h2 class="card-title text-center">
                 <h1 class="text-4xl">
-                    <span class="text-neutral-content hover:text-primary">Akash</span> 
-                    <span class="text-neutral-content hover:text-primary">Pramod</span> 
-                    <span class="text-neutral-content hover:text-primary">Kumar</span>
+                    <span class="hover:text-primary hov">Akash</span> 
+                    <span class="hover:text-primary">Pramod</span> 
+                    <span class="hover:text-primary">Kumar</span>
                 </h1>
             </h2>
             <p>
-                <span class="text-primary hover:text-error">Computer</span>
-                <span class="text-primary hover:text-error">Science</span>
+                <span class="hover:text-error">Computer</span>
+                <span class="hover:text-error">Science</span>
             </p>
-            <span class="text-neutral-content">
+            <span>
                 My name is 
                 <span class="text-primary">Akash Pramod Kumar</span>.
                 I'm currently attending the 
