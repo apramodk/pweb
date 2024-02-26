@@ -3,7 +3,7 @@
     import { Navbar } from "$lib/index";
     
     let isDarkMode:boolean;
-    let theme = [ "retro", "dim"];
+    let theme = ["dim", "retro"];
 </script>
 
 <body data-theme={theme[Number(isDarkMode)]}>

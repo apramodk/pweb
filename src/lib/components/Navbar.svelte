@@ -1,7 +1,7 @@
 <script lang="ts">
     import { base } from '$app/paths';
     export let isDarkMode:boolean=false;
-    let txtc = ["","text-base-content"];
+    let txtc = ["text-base-content", ""];
 </script>
 
 <div class="navbar bg-base-300 sticky top-0 z-10">
