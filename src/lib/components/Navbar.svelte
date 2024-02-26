@@ -4,7 +4,7 @@
     let txtc = ["","text-base-content"];
 </script>
 
-<div class="navbar bg-base-300">
+<div class="navbar bg-base-300 sticky top-0 z-10">
     <div class="flex-1">
         <a href="{base}/" class="btn btn-ghost normal-case text-xl {txtc[Number(isDarkMode)]} hover:text-neutral-content">APK</a>
     </div>
@@ -14,7 +14,7 @@
         </nav>
         <div class="form-control" >
             <label class="label cursor-pointer">
-                <input type="checkbox" class="toggle hover:bg-secondary" bind:checked={isDarkMode} />
+                <input type="checkbox" class="toggle hover:bg-secondary " bind:checked={isDarkMode} />
             </label>
         </div>
     </div>
