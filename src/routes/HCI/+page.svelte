@@ -1,6 +1,5 @@
 <script lang="ts">
-    import {Card} from "$lib/index"
-
+    import {Card, Images} from "$lib/index"
 </script>
 
 <style>
@@ -52,7 +51,7 @@
                     pressed. 
                 </p>
                 <div class="flex justify-center p-5">
-                    <img src='src\lib\images\[COSC594]mpg2_test1.png' alt="Prototype 1" />
+                    <Images im_index={0} />
                 </div>
                 <p>
                     We eventually decided against the idea for three reason:<br>
@@ -65,7 +64,7 @@
                         inputs for the Piano Tiles game. 
                 </p>
                 <div class="flex justify-center p-5">
-                    <img src='src\lib\images\[COSC594]mpg2_test2.png' alt="Prototype 2" />
+                    <Images im_index={1} />
                 </div>            
                 <p>
                     Again, we abandoned the idea for three reasons:<br>
@@ -82,7 +81,7 @@
                     content face for everything in between.
                 </p>
                 <div class="flex justify-center p-5">
-                    <img src='src\lib\images\[COSC594]mpg2_test3.png' alt="Prototype 3" />
+                    <Images im_index={2} />
                 </div>
                 <p>
                     The big issue with this program was that it was too simple. It was creative, but not impressive. Also, the 8x8 LED matrix was just becoming boring as we have all
