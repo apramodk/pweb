@@ -139,4 +139,102 @@
             </div> 
         </Card>
     </div>
+
+    <div class="card w-3/4 m-10">
+        <Card title="IMU Drone Controller" description="An IMU controller alternative for (FPV)drones"isModalOpen={false}>
+            <div class="report">
+                <h2><strong>Ideation/Brainstorming: </strong></h2>
+                <p>
+                    When brainstorming ideas for mini-project 4, we pondered the exciting possibilities of utilizing Inertial Measurement Units (IMUs). Our research into real-world applications revealed that drones employ IMUs to relay contextual information about the drone's relative position and movement back to the remote controller. This technology facilitates precise and responsive control, enhancing the user's experience. Since this is a Human-Computer Interaction (HCI) course, we were also keen on approaching this project from a unique angle that would redefine the way we interact with technology.
+                    <br>
+                    While exploring YouTube, I came across a video featuring the Xbox team at Microsoft discussing the development of the adaptive controller. This innovative controller was specifically designed to accommodate individuals with disabilities, with the goal of providing a more inclusive gaming experience.
+                </p>
+                <div class="flex justify-center p-5">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/9fcK19CAjWM?si=3qDqINjkUSMtGXat" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                </div>
+                <p>
+                    One particularly insightful statement from a team member responsible for creating the adaptive controller caught my attention. They asserted that "a disability is defined as a mismatch in human interaction." This perspective challenges the conventional understanding of disabilities, suggesting that many are not inherent flaws or limitations of the individual but rather arise from a lack of support and accommodation in their environment.
+                    <br/>
+                    In essence, this viewpoint shifts the focus from the individual's impairment to the societal and environmental barriers that prevent them from fully participating in various activities, including gaming. By embracing this perspective, the Xbox team emphasized the importance of creating inclusive products and environments that empower individuals with disabilities to engage more fully in the activities they enjoy.
+                    <br/>
+                    This approach to understanding and addressing disabilities highlights the need for more inclusive design practices across various industries, not just gaming. It showcases the potential for technology to break down barriers and create opportunities for people of all abilities to participate equally in society.
+                    <br/>
+                    A compelling question arises: why is it important to make such accommodations in something as seemingly trivial as video games? Beyond the simple premise that everyone deserves the chance to experience these enjoyable activities, there is a deeper significance. The genesis of the Adaptive Controller can be traced back to veterans who utilized video games as a form of prescribed therapy. Veterans account for a disproportionate number of suicides, and a psychological study demonstrated that veterans prescribed video games exhibited better signs of recovery from severe depression.
+                </p>
+                <h2><strong>Finalized Idea #1: </strong></h2>
+                <p>So we're going to make an IMU controller for an fpv drone. Why an fpv drone? </p>
+                <div class="flex justify-center p-5">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/nsI2eMFEvkc?si=DQPkpuFHmPLXr8gP" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                </div>
+                
+                <h2><strong>Finalized Idea #2: </strong></h2>
+                <p>
+                    The first challenge we anticipated was formalizing the IMU data to be read as valid input. It's difficult to determine the exact input format required, but what if we built a drone ourselves? Drones are expensive, and FPV drones are even more so. How about we build our own drone?
+                    <br>
+                    Building our own drone presents several advantages. We were inclined to use the ESP32, as it features a dual-core processor and can create a WiFi access point. By utilizing the ESP32, we can use it to act as the drone's controller and provide a point of connection for the Arduino with the built-in IMU to connect wirelessly.
+                    <br/> 
+                    Additionally, the extra layer of complexity beyond just getting imu readings also made this a more interesting project. 
+                </p>
+
+                <h2><strong>How to build a drone: </strong></h2>
+                <p>
+                    To build the drone we have to address a few important aspects.
+                </p>
+                <ul>
+                    <li>- What electrical parts do we need</li>
+                    <li>- We also need to implement some signal based communication channel between the remote controller and the drones onboard controller.</li>
+                    <li>- We need some sort of housing for the drones electronic components.</li>
+                </ul>
+                
+                <h3>Addressing Electronics Parts</h3>
+                <p>
+                    So drones have 7 important parts, the remote controller, the drone's onboard controller, the motor, the propellor, an Electronic Speed Controller, a power source, and a frame.
+
+                    We have two parts covered, the two controllers. We find a project from another individual who is working towards building an esp32 drone and he lists a few parts for us an 8.5x20mm Motor 3-5V brushed motor and propellor combo, a CAD file for the frame, and a P-channel MOSFET transistor for making his own ESC.
+                </p>
+                <h3>Addressing communication channel</h3>
+                <p>
+                    As I said earlier we wanted to use Wifi. The esp32, has a way to creat a wifi access point, this lets up basically create this private network where connected devices can communicate with each other. Since the Arduino and ESP32 can both use the WiFi.h library this implementation is fairly simple. 
+                </p>
+
+                <h3>Addressing Housing</h3>
+                <p>
+                    While the online resource provided a CAD file, the built in housing meant to fit the motor didn't fit, so we had to design our own frame.
+                </p>
+                <div class="flex justify-center m-8">
+                    <Images im_index={3} />
+                </div>
+                <div class="flex justify-center p-5">
+                    <Images im_index={4} />
+                </div>
+                
+                <h2><strong>What went wrong? </strong></h2>
+                <p>
+                    In Short, the SMD Transistor was not an apt alternative for an actual Electronic Speed Controller. There is also a reason the motor was cheap. 
+
+                    The transistor ended up being too small to actually try and write an electronic speed controller with, even though the GPIO pins on the esp32 actually have a way of sending varying voltages, which would've allowed us to manipulate the current to the motor. Because the transistor was too small, it was just almost impossible for unexperienced to work with using just tweezers and a soldering iron.
+                    <!-- 8,9,10 -->
+                </p>
+                <div class="flex justify-center p-5">
+                    <Images im_index={8} />
+                </div>
+                <div class="flex justify-center p-5">
+                    <Images im_index={9} />
+                </div>
+
+                <h2><strong>What did we learn?</strong></h2>
+                <p>
+                    Our journey in building an IMU drone controller provided us with valuable learning experiences and insights. Firstly, we gained a deeper understanding of the intricate components and technologies involved in drone construction, including the role of IMUs in flight stabilization and control.
+                    <br/>
+                    Additionally, we learned the importance of thorough planning and research in project development. Identifying suitable electronic parts, establishing communication channels between controllers, and designing a suitable housing demanded meticulous attention to detail and problem-solving skills.
+                    <br/>
+                    Furthermore, our project underscored the significance of experimentation and iteration in the prototyping process. Despite encountering challenges such as incompatible components and design limitations, each setback served as an opportunity for learning and refinement.
+                    <br/>
+                    Importantly, our experience highlighted the value of interdisciplinary collaboration and knowledge-sharing. By drawing upon resources and insights from diverse sources, including online communities and existing projects, we were able to navigate challenges more effectively and enrich our understanding.
+                    <br/>
+                    Ultimately, our venture into building an IMU drone controller not only expanded our technical competencies but also cultivated essential skills in teamwork, problem-solving, and adaptability. These lessons will undoubtedly inform and enhance our future endeavors in the realm of technology and innovation.
+                </p>
+            </div>
+        </Card>
+    </div>
 </main>
