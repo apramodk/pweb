@@ -10,6 +10,9 @@
     import img5 from "./img4.png";
     import img6 from "./img4.png";
     import img7 from "./img4.png";
+    import mgp3_1 from "./mpg3_prototype1.png";
+    import mgp3_2 from "./mpg3_prototype2.png";
+    import mgp3_3 from "./mpg3_prototype3.png";
 
     export let im_index: number = 0;   
     const mp2_images = [
@@ -23,7 +26,10 @@
         img4,
         img5,
         img6,
-        img7]
+        img7,
+        mgp3_1,
+        mgp3_2,
+        mgp3_3]
 </script>
 
 <img class="w-2/4" src={mp2_images[im_index]} alt="mp2_1" />

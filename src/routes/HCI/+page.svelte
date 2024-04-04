@@ -8,9 +8,10 @@
         height: auto; /* Automatically calculate the height based on the aspect ratio */
     }
 </style>
+
 <main class="m-8 grid grid-cols-2 items-center justify-between">
     <div class="card w-3/4 m-10">
-        <Card title="LED Game" description="Simple LED game controlled by capacitive touch sensors"isModalOpen={false}>
+        <Card title="MGP1: LED Game" description="Simple LED game controlled by capacitive touch sensors"isModalOpen={false}>
             <div class="report">
                 <p><strong>Introduction:</strong> The provided code implements a simple LED game controlled by capacitive touch sensors. The game utilizes an 8x8 LED matrix to display the game state and four capacitive sensors as input devices. The objective of the game is to press the correct capacitive sensor corresponding to the LED tile at the bottom row.</p>
                 <p><strong>Components:</strong></p>
@@ -34,7 +35,7 @@
     </div>
 
     <div class="card w-3/4 m-10">
-        <Card title="Plant Tamogachi" description="A device that treats a plant as a virtual pet"isModalOpen={false}>
+        <Card title="MGP2: Plant Tamogachi" description="A device that treats a plant as a virtual pet"isModalOpen={false}>
             <div class="report">
                 <h2><strong>Introduction:</strong> </h2>
                 <p>
@@ -141,7 +142,76 @@
     </div>
 
     <div class="card w-3/4 m-10">
-        <Card title="IMU Drone Controller" description="An IMU controller alternative for (FPV)drones"isModalOpen={false}>
+        <Card title="MGP3: Intermediate Prototype" description="How we came up with the prototype to mgP3"isModalOpen={false}>
+            <div class="report">
+                <h2><strong>Ideation/Brainstorming: </strong></h2>
+                <p>
+                    When we first saw the project prompt, the idea of a chicken's head immediately popped up. It is so intriguing to
+                    see videos of how chickens automatically stabilize their heads while their body is moved aroun. We immediately 
+                    thought of a camera stabilizer. With the use of an IMU and a few motors, the idea of a camera stabilizer was 
+                    feasible. However, we wanted to make this device easily accessible and not everyone is carrying a digital camera.
+                    Therefore, we believed that the stabilizers should be designed to carry phones.
+                </p>
+                <br/>
+                <br/>
+                <h2><strong>Protoype 1: </strong></h2>
+                <p>
+                    We wanted to practice our parallel prototyping skills by coming up with different designs of different ideas. The first
+                    design we thought of was a headband with a phone carrier, inspired by the head of chicken we brought up earlier.
+                </p>
+                <div class="flex justify-center p-5">
+                    <Images im_index={12} />
+                </div>
+                <p>
+                    We eventually passed out on this idea because we could not figure out how we would be able to support the weight of a
+                    phone on a headband. Also, it looked really ridiculous.
+                </p>
+                <br/>
+                <p>
+                    The second design we came up with for our first prototype was a hand-held phone stabilizer.
+                </p>
+                <div class="flex justify-center p-5">
+                    <Images im_index={11} />
+                </div>
+                <p>
+                    We knew this idea was feasible and useful. We eventually passed on this idea as we thought it was too basic. There are 
+                    already so many handheld phone stabilizers out there that we could easily purchase. So this would not really be our 
+                    design, just more of a recreation of an already well-established design.
+                </p>
+                <br/>
+                <br/>
+                <h2><strong>Protoype 2: </strong></h2>
+                <p>
+                    For our second prototype, we thought about how IMU design could facilitate life in general, specifically for the disabled.
+                    There are many activities and hobbies people with disabilities cannot partake in due to their conditions. We came up
+                    with a contoller that uses an IMU as an input. We wanted to make a glove that had an IMU attached to it, and  the user
+                    could give input on devices by tilting their hand forward, backward, left, or right. We could use the Arduino Nano's 
+                    IMU and WiFi communication capabilities to acheive this.            
+                </p>
+                <div class="flex justify-center p-5">
+                    <Images im_index={13} />
+                </div>
+                <p>
+                    Eventually, we decided on this prototype and design. We were fascinated by the idea of creating something for the benefit
+                    of others. We were also intrigued in using the WiFi communication capabilites of a microcontroller, something neither of
+                    us has done before.
+                </p>
+                <br/>
+                <br/>
+                <h2><strong>Beginning Work: </strong></h2>
+                <p>
+                    We have not thought about what application we will use for our demonstration. The idea of a drone did get brought up.
+                    The glove could be used to not only direct the movement of the drone, but also at what speed. So for our very first 
+                    prototype, we came up with a design that included six LEDS. Three LEDS indicating forward movement and three indicating
+                    backward movement. Each LED would light up based on how far forward or backward the Nano would move. The following is a 
+                    video of our prototype.
+                </p>
+            </div>
+        </Card>
+    </div>
+
+    <div class="card w-3/4 m-10">
+        <Card title="MGP3: IMU Glove Controller" description="An IMU controller alternative for interactive devices like drones"isModalOpen={false}>
             <div class="report">
                 <h2><strong>Ideation/Brainstorming: </strong></h2>
                 <p>
@@ -155,9 +225,12 @@
                 <p>
                     One particularly insightful statement from a team member responsible for creating the adaptive controller caught my attention. They asserted that "a disability is defined as a mismatch in human interaction." This perspective challenges the conventional understanding of disabilities, suggesting that many are not inherent flaws or limitations of the individual but rather arise from a lack of support and accommodation in their environment.
                     <br/>
+                    <br/>
                     In essence, this viewpoint shifts the focus from the individual's impairment to the societal and environmental barriers that prevent them from fully participating in various activities, including gaming. By embracing this perspective, the Xbox team emphasized the importance of creating inclusive products and environments that empower individuals with disabilities to engage more fully in the activities they enjoy.
                     <br/>
+                    <br/>
                     This approach to understanding and addressing disabilities highlights the need for more inclusive design practices across various industries, not just gaming. It showcases the potential for technology to break down barriers and create opportunities for people of all abilities to participate equally in society.
+                    <br/>
                     <br/>
                     A compelling question arises: why is it important to make such accommodations in something as seemingly trivial as video games? Beyond the simple premise that everyone deserves the chance to experience these enjoyable activities, there is a deeper significance. The genesis of the Adaptive Controller can be traced back to veterans who utilized video games as a form of prescribed therapy. Veterans account for a disproportionate number of suicides, and a psychological study demonstrated that veterans prescribed video games exhibited better signs of recovery from severe depression.
                 </p>
