@@ -310,9 +310,13 @@
 					</video>
 				</div>
 				<p>The following is the code we used to program our prototype.</p>
-                <br/>
-				<button on:click={toggleExpand} style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Code</button>
-                <div class="expandable {expanded ? 'expanded' : ''}">
+				<br />
+				<button
+					on:click={toggleExpand}
+					style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;"
+					>CODE
+				</button>
+				<div class="expandable {expanded ? 'expanded' : ''}">
 					<pre>
                         <code>
                             #include &lt;Arduino_LSM6DS3.h&gt;
@@ -464,15 +468,18 @@
 			<div class="report">
 				<h2><strong>Ideation/Brainstorming: </strong></h2>
 				<p>
-					When brainstorming ideas for mini-project 4, we pondered the exciting possibilities of
-					utilizing Inertial Measurement Units (IMUs). Our research into real-world applications
-					revealed that drones employ IMUs to relay contextual information about the drone's
-					relative position and movement back to the remote controller. This technology facilitates
-					precise and responsive control, enhancing the user's experience. Since this is a
-					Human-Computer Interaction (HCI) course, we were also keen on approaching this project
-					from a unique angle that would redefine the way we interact with technology.
+					When brainstorming ideas for MGP4, we pondered the exciting possibilities of utilizing
+					Inertial Measurement Units (IMUs). To see more of our brainstorming process, you can view
+					it under "MGP3: Intermediate Prototype" section of the blog. Basically, our research led
+					us into real-world applications used by IMUs. For example, we found out that drones employ
+					IMUs to relay contextual information about the drone's relative position and movement back
+					to its remote controller. This technology facilitates precise and responsive control,
+					enhancing the user's experience. Since this is a Human-Computer Interaction (HCI) course,
+					we were also keen on approaching this project from a unique angle that would redefine the
+					way we interact with technology.
 					<br />
-					While exploring YouTube, I came across a video featuring the Xbox team at Microsoft discussing
+					<br />
+					While exploring YouTube, we came across a video featuring the Xbox team at Microsoft discussing
 					the development of the adaptive controller. This innovative controller was specifically designed
 					to accommodate individuals with disabilities, with the goal of providing a more inclusive gaming
 					experience.
@@ -507,7 +514,8 @@
 					This approach to understanding and addressing disabilities highlights the need for more inclusive
 					design practices across various industries, not just gaming. It showcases the potential for
 					technology to break down barriers and create opportunities for people of all abilities to participate
-					equally in society.
+					equally in society. Our team wanted to implement this ideology in our project. Of course, we
+					had to think about the practicality of designing such a device.
 					<br />
 					<br />
 					A compelling question arises: why is it important to make such accommodations in something
@@ -518,7 +526,208 @@
 					demonstrated that veterans prescribed video games exhibited better signs of recovery from severe
 					depression.
 				</p>
+				<br />
+				<p>
+					We wanted this device to not just be used for video games, but for any device that
+					utilizes user inputs. People with disabilities deserve to have as much flexibility in
+					their hobbies as everyone else. That is how we decided on a glove, which uses the tilt of
+					one's hand as input.
+				</p>
+				<br />
 				<h2><strong>Finalized Idea #1: </strong></h2>
+				<p>
+					So we decided, on making a glove, with the Arduino Nano attached and using its internal
+					IMU. We made a program that determines how far up, down, left, and right the user's glove
+					tilts. We also added LEDs on all four sides of the Nano to indicate where the user is
+					tilting. The following video is a demonstration of the glove we made:
+				</p>
+				<div class="flex justify-center p-5">
+					<video width="560" height="315" controls src="src\lib\images\mgp3_glove1.MOV">
+						<track kind="captions" />
+					</video>
+				</div>
+				<p>
+					Our idea was to use another microcontroller, an ESP32, to wirelessly communicate with the
+					Arduino Nano. Since the ESP32 has two cores on its processor, we planned to use one of its
+					core to communicate with the Arduino and receive input while the other core controlled the
+					device we were wirelessly sending inputs to. The ESP32 would receive four inputs of the
+					four directions the glove would tilt. The following is a video showcasing the inputs the
+					ESP32 would receive:
+				</p>
+				<div class="flex justify-center p-5">
+					<video width="560" height="315" controls src="src\lib\images\mgp3_glove2.MOV">
+						<track kind="captions" />
+					</video>
+				</div>
+				<p>
+					We successfully sent the inputs to the ESP32. The following is a video of the ESP32
+					outputting the inputs it read:
+				</p>
+				<!-- AKASH, INSERT THE VIDEO OF THE ESP32 SERIAL PRINTING THE INPUTS HERE -->
+				<p>The following is the code we used for this project.</p>
+				<button
+					on:click={toggleExpand}
+					style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;"
+					>Arduino Nano Code
+				</button>
+				<div class="expandable {expanded ? 'expanded' : ''}">
+					<pre>
+                        <code>
+							#include &lt;Arduino_LSM6DS3.h&gt;
+							#include &lt;Wire.h&gt;
+
+							float x, y, z;
+							int degreesX_f = 0;
+							int degreesX_b = 0;
+							int degreesY_r = 0;
+							int degreesY_l = 0;
+							int threshold = 23;
+
+							const int LED_PIN[] = &#123;17, 2, 9, 4&#125;; 
+
+							void setup() &#123;
+
+								for(int i = 0; i &lt; 4; i++)&#123;
+									pinMode(LED_PIN[i], OUTPUT);
+								&#125;
+
+								Wire.begin();
+
+								Serial.begin(9600);
+								while (!Serial);
+								Serial.println("Started");
+
+								if (!IMU.begin()) &#123;
+									Serial.println("Failed to initialize IMU!");
+									while (1);
+								&#125;
+
+								Serial.print("Accelerometer sample rate = ");
+								Serial.print(IMU.accelerationSampleRate());
+								Serial.println("Hz");
+							&#125;
+
+							void loop() &#123;
+
+								if (IMU.accelerationAvailable()) &#123;
+									IMU.readAcceleration(x, y, z);
+								&#125;
+
+								if (x &gt; 0.1) &#123;
+									digitalWrite(4, 0);
+									x = 100 * x;
+									degreesX_f = map(x, 0, 97, 0, 90);
+									Serial.print("Tilting forward ");
+									Serial.print(degreesX_f);
+									Serial.println("  degrees");
+
+									if (degreesX_f &gt; threshold) digitalWrite(2, 1);
+									else digitalWrite(2, 0);
+								&#125; else digitalWrite(2, 0);
+
+								delay(50);
+
+								if (x &lt; -0.1) &#123;
+									digitalWrite(2, 0);
+									x = 100 * x;
+									degreesX_b = map(x, 0, -100, 0, 90);
+									Serial.print("Tilting backward ");
+									Serial.print(degreesX_b);
+									Serial.println("  degrees");
+
+									if (degreesX_b &gt; threshold) digitalWrite(4, 1);
+									else digitalWrite(4, 0);
+								&#125; else digitalWrite(4, 0);
+
+								delay(50);
+
+								if (y &gt; 0.1) &#123;
+									digitalWrite(17, 0);
+									y = 100 * y;
+									degreesY_l = map(y, 0, 97, 0, 90);
+									Serial.print("Tilting left ");
+									Serial.print(degreesY_l);
+									Serial.println("  degrees");
+									if (degreesY_l &gt; threshold) digitalWrite(9, 1);
+									else digitalWrite(9, 0);
+								&#125; else digitalWrite(9,0);
+
+								delay(50);
+
+								if (y &lt; -0.1) &#123;
+									digitalWrite(9, 0);
+									y = 100 * y;
+									degreesY_r = map(y, 0, -100, 0, 90);
+									Serial.print("Tilting right ");
+									Serial.print(degreesY_r);
+									Serial.println("  degrees");
+									if (degreesY_r &gt; threshold) digitalWrite(17, 1);
+									else digitalWrite(17, 0);
+								&#125; else digitalWrite(17,0);
+
+								byte sendData[8];
+								sendData[0] = (degreesX_f &gt;&gt; 8) & 0xFF;  // High byte of degreesX_f
+								sendData[1] = degreesX_f & 0xFF;         // Low byte of degreesX_f
+								sendData[2] = (degreesX_b &gt;&gt; 8) & 0xFF;  // High byte of degreesX_b
+								sendData[3] = degreesX_b & 0xFF;         // Low byte of degreesX_b
+								sendData[4] = (degreesY_r &gt;&gt; 8) & 0xFF;  // High byte of degreesY_r
+								sendData[5] = degreesY_r & 0xFF;         // Low byte of degreesY_r
+								sendData[6] = (degreesY_l &gt;&gt; 8) & 0xFF;  // High byte of degreesY_l
+								sendData[7] = degreesY_l & 0xFF;         // Low byte of degreesY_l
+
+								// Send data over I2C
+								Wire.beginTransmission(8);    // Address of the ESP32
+								Wire.write(sendData, 8);      // Send the data array
+								Wire.endTransmission();       // Stop transmitting
+								
+								delay(1000);
+								
+							&#125;
+						</code>
+                    </pre>
+				</div>
+				<button
+					on:click={toggleExpand}
+					style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;"
+					>ESP32 Code
+				</button>
+				<div class="expandable {expanded ? 'expanded' : ''}">
+					<pre>
+						<code>
+							<!-- AKASH, INSERT THE ESP32 CODE HERE. REMEMBER TO USE HTML ENTIITIES FOR THE CHARACTERS '<','>','{', AND '}'.-->
+						</code>
+					</pre>
+				</div>
+				<br />
+				<h2><strong>Code Breakdown: </strong></h2>
+				<p>
+					If you look at the code, we use the Arduino's bultin library to read in it's IMU values.
+					We then map those readings to display the tilt as a measure between 0 and 90 degrees.
+					Afterwards, we display each of those values if they are actively being tilted more than
+					the threshold we set, which is 23 degrees. Then, the respective led is lit up. If an LED
+					is lit up, then it's opposite LED will not be. This way, there wouldn't be any confusion
+					on the tilt of the hands. However, its perpendicular LED could still be lit up, allowing
+					the user to see if it's tilted above the threshold in both directions, the X and Y axis
+					values.
+				</p>
+				<br />
+				<p>
+					We then use the Wire.h library to communicate with the ESP32 microcontroller. We send an
+					array of 8 bytes, where all four inputs are divided into two bytes of data. The ESP32
+					reads this data and then converts it into an array of four ints. A for loop is used to
+					combine two bytes of data into one, then inputs the recovered data into the array.
+					Afterwards, each element of the array is assigned to it's respective integers. That is how
+					the ESP32 receives the data, which can be used for many applications.
+				</p>
+				<br />
+				<p>
+					We thought about different cases we could use this for. We could use it as an interactive
+					video game controller, but that idea has already been done, which was also the main
+					inspiration for this project. We wanted to make something new, not just recreate something
+					already made. That is when we decided to use the glove as a controller for a drone.
+				</p>
+
+				<h2><strong>Finalized Idea #2: </strong></h2>
 				<p>So we're going to make an IMU controller for an fpv drone. Why an fpv drone?</p>
 				<div class="flex justify-center p-5">
 					<iframe
@@ -532,21 +741,24 @@
 						allowfullscreen
 					></iframe>
 				</div>
-
-				<h2><strong>Finalized Idea #2: </strong></h2>
+				<br />
 				<p>
 					The first challenge we anticipated was formalizing the IMU data to be read as valid input.
 					It's difficult to determine the exact input format required, but what if we built a drone
 					ourselves? Drones are expensive, and FPV drones are even more so. How about we build our
 					own drone?
-					<br />
-					Building our own drone presents several advantages. We were inclined to use the ESP32, as it
-					features a dual-core processor and can create a WiFi access point. By utilizing the ESP32,
-					we can use it to act as the drone's controller and provide a point of connection for the Arduino
-					with the built-in IMU to connect wirelessly.
-					<br />
-					Additionally, the extra layer of complexity beyond just getting imu readings also made this
-					a more interesting project.
+				</p>
+				<br />
+				<p>
+					Building our own drone presents several advantages. We were inclined to use the ESP32, as
+					it features a dual-core processor and can create a WiFi access point. By utilizing the
+					ESP32, we can use it to act as the drone's controller and provide a point of connection
+					for the Arduino with the built-in IMU to connect wirelessly.
+				</p>
+				<br />
+				<p>
+					Additionally, the extra layer of complexity beyond just getting imu readings also made
+					this a more interesting project.
 				</p>
 
 				<h2><strong>How to build a drone: </strong></h2>
@@ -640,7 +852,7 @@
 <style>
 	.expandable {
 		overflow: hidden;
-		transition: max-height 100.0s ease;
+		transition: max-height 0.3s ease;
 		max-height: 0;
 	}
 
