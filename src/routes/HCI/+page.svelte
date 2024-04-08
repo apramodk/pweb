@@ -466,6 +466,9 @@
 			isModalOpen={false}
 		>
 			<div class="report">
+				<div class="flex justify-center p-5">
+					<Images im_index={14} />
+				</div>
 				<h2><strong>Ideation/Brainstorming: </strong></h2>
 				<p>
 					When brainstorming ideas for MGP4, we pondered the exciting possibilities of utilizing

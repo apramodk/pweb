@@ -13,7 +13,7 @@
     import mgp3_1 from "./mpg3_prototype1.png";
     import mgp3_2 from "./mpg3_prototype2.png";
     import mgp3_3 from "./mpg3_prototype3.png";
-    import mgp3 from "./mgp3_glove.jpg"
+    import mgp3 from "./mgp3_glove.png"
 
     export let im_index: number = 0;   
     const mp2_images = [
