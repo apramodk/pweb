@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { Card, Images } from '$lib/index';
+	import mgp3Prototype from '$lib/images/mgp3_prototype.MOV';
+	import mgp3Glove1 from '$lib/images/mgp3_glove1.MOV';
+	import mgp3Glove2 from '$lib/images/mgp3_glove2.MOV';
 
 	let expanded = false;
 
@@ -305,7 +308,7 @@
 					would move. The following is a video of our prototype.
 				</p>
 				<div class="flex justify-center p-5">
-					<video width="560" height="315" controls src="src\lib\images\mgp3_prototype.MOV">
+					<video width="560" height="315" controls src={mgp3Prototype}>
 						<track kind="captions" />
 					</video>
 				</div>
@@ -545,7 +548,7 @@
 					tilting. The following video is a demonstration of the glove we made:
 				</p>
 				<div class="flex justify-center p-5">
-					<video width="560" height="315" controls src="src\lib\images\mgp3_glove1.MOV">
+					<video width="560" height="315" controls src={mgp3Glove1}>
 						<track kind="captions" />
 					</video>
 				</div>
@@ -558,7 +561,7 @@
 					ESP32 would receive:
 				</p>
 				<div class="flex justify-center p-5">
-					<video width="560" height="315" controls src="src\lib\images\mgp3_glove2.MOV">
+					<video width="560" height="315" controls src={mgp3Glove2}>
 						<track kind="captions" />
 					</video>
 				</div>
