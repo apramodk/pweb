@@ -8,8 +8,8 @@
 	}
 </script>
 
-<main class="m-8 grid grid-cols-2 items-center justify-between">
-	<div class="card w-3/4 m-10">
+<main class="mx-4 my-6 md:m-8 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+	<div class="card w-full">
 		<Card
 			title="MGP1: LED Game"
 			description="Simple LED game controlled by capacitive touch sensors"
@@ -86,7 +86,7 @@
 		</Card>
 	</div>
 
-	<div class="card w-3/4 m-10">
+	<div class="card w-full">
 		<Card
 			title="MGP2: Plant Tamogachi"
 			description="A device that treats a plant as a virtual pet"
@@ -229,7 +229,7 @@
 		</Card>
 	</div>
 
-	<div class="card w-3/4 m-10">
+	<div class="card w-full">
 		<Card
 			title="MGP3: Intermediate Prototype"
 			description="How we came up with the prototype to mgP3"
@@ -459,7 +459,7 @@
 		</Card>
 	</div>
 
-	<div class="card w-3/4 m-10">
+	<div class="card w-full">
 		<Card
 			title="MGP3: IMU Glove Controller"
 			description="An IMU controller alternative for interactive devices like drones"
@@ -860,17 +860,32 @@
 	}
 
 	.expanded {
-		max-height: none; /* Set your desired max height here */
+		max-height: none;
 	}
 
 	img {
-		width: 560px; /* Set the width to 100 pixels */
-		height: auto; /* Automatically calculate the height based on the aspect ratio */
+		width: 100%;
+		max-width: 560px;
+		height: auto;
 	}
 
 	pre {
 		background-color: #f4f4f4;
 		padding: 1em;
 		overflow-x: auto;
+		font-size: 0.75rem;
+	}
+
+	iframe, video {
+		width: 100%;
+		max-width: 560px;
+		height: auto;
+		aspect-ratio: 16/9;
+	}
+
+	@media (min-width: 768px) {
+		pre {
+			font-size: 0.875rem;
+		}
 	}
 </style>
