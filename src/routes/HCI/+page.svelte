@@ -17,7 +17,7 @@
 <div class="max-w-6xl mx-auto px-6 py-12">
     <header class="mb-10">
         <h1 class="text-3xl md:text-4xl font-bold tracking-tight">HCI &amp; Embedded Systems</h1>
-        <p class="mt-2 text-base-content/60 font-mono text-sm">Hardware prototypes from UTK's Human-Computer Interaction course</p>
+        <p class="mt-2 text-base-content/60 font-mono text-sm">Hardware prototypes from UTK’s Human-Computer Interaction course</p>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
