@@ -11,6 +11,12 @@ export default {
         'mac-red': '#ED6A5E',
         'mac-yellow': '#F5BF4F',
         'mac-green': '#62C554',
+        'apple-green': '#61BB46',
+        'apple-yellow': '#FDB827',
+        'apple-orange': '#F5821F',
+        'apple-red': '#E03A3E',
+        'apple-purple': '#963D97',
+        'apple-blue': '#009DDC',
       },
       boxShadow: {
         'window': '0 4px 24px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04)',

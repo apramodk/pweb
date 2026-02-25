@@ -1,8 +1,10 @@
 <script lang="ts">
     import { base } from '$app/paths';
     import { page } from '$app/stores';
+    import { createEventDispatcher } from 'svelte';
     export let isDarkMode: boolean = false;
 
+    const dispatch = createEventDispatcher();
     $: currentPath = $page.url.pathname;
 </script>
 
@@ -29,6 +31,21 @@
             >
                 Software
             </a>
+            <a
+                href="{base}/research"
+                class="btn btn-ghost btn-sm font-mono text-sm {currentPath.includes('/research') ? 'bg-base-300 text-primary' : ''}"
+            >
+                Research
+            </a>
+            <button
+                class="btn btn-ghost btn-sm btn-square"
+                on:click={() => dispatch('search')}
+                aria-label="Search (⌘K)"
+            >
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </button>
             <button
                 class="btn btn-ghost btn-sm btn-square"
                 on:click={() => isDarkMode = !isDarkMode}
