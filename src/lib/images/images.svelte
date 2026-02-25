@@ -7,15 +7,15 @@
     import img2 from "./img2.png";
     import img3 from "./img3.png";
     import img4 from "./img4.png";
-    import img5 from "./img4.png";
-    import img6 from "./img4.png";
-    import img7 from "./img4.png";
+    import img5 from "./img5.png";
+    import img6 from "./img6.png";
+    import img7 from "./img7.png";
     import mgp3_1 from "./mpg3_prototype1.png";
     import mgp3_2 from "./mpg3_prototype2.png";
     import mgp3_3 from "./mpg3_prototype3.png";
     import mgp3 from "./mgp3_glove.png"
 
-    export let im_index: number = 0;   
+    export let im_index: number = 0;
     const mp2_images = [
         pic1,
         pic2,
@@ -34,4 +34,9 @@
         mgp3]
 </script>
 
-<img class="w-2/4" src={mp2_images[im_index]} alt="mp2_1" />
+<img
+    class="w-full max-w-lg rounded-lg border border-base-300"
+    src={mp2_images[im_index]}
+    alt="Project image {im_index + 1}"
+    loading="lazy"
+/>
