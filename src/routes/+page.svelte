@@ -1,7 +1,7 @@
 <svelte:head>
-    <title>Akash Pramod Kumar — Cloud Software Engineer</title>
-    <meta property="og:title" content="Akash Pramod Kumar — Cloud Software Engineer" />
-    <meta property="og:description" content="Cloud Software Engineer at Microsoft. UTK CS alum. Building cloud infrastructure, embedded systems, and accessible technology." />
+    <title>Akash Pramod Kumar — Software Engineer</title>
+    <meta property="og:title" content="Akash Pramod Kumar — Software Engineer" />
+    <meta property="og:description" content="Software Engineer at Microsoft (Azure SLB). UTK CS alum. Building network infrastructure, embedded systems, and accessible technology." />
     <meta property="og:type" content="website" />
 </svelte:head>
 
@@ -15,13 +15,13 @@
         <h1 class="text-4xl md:text-5xl font-bold tracking-tight">
             Akash Pramod Kumar
         </h1>
-        <p class="mt-3 text-lg font-mono text-primary">Cloud Software Engineer @ Microsoft</p>
+        <p class="mt-3 text-lg font-mono text-primary">Software Engineer @ Microsoft</p>
         <p class="mt-6 text-base-content/80 leading-relaxed max-w-xl">
-            Building cloud infrastructure at Microsoft in Redmond. Previously
-            a researcher at UTK's SMART Lab (robotics for Alzheimer's care)
-            and a developer at Pilot Company. I'm drawn to work at the
-            intersection of systems programming, embedded hardware, and
-            accessible design.
+            Software engineer on Azure's Software Load Balancer team,
+            building network infrastructure that spans thousands of hosts.
+            Previously a researcher in neuromorphic computing and robotics
+            at UTK, and a developer at Pilot Company. I gravitate toward
+            systems programming, embedded hardware, and accessible design.
         </p>
 
         <!-- Social buttons -->
@@ -57,6 +57,19 @@
         </div>
     </section>
 
+    <!-- Education -->
+    <section class="mb-16">
+        <h2 class="text-xl font-semibold mb-6">Education</h2>
+        <div class="flex gap-4">
+            <div class="w-1 rounded-full bg-primary shrink-0"></div>
+            <div>
+                <p class="font-semibold">Bachelor of Science in Computer Science</p>
+                <p class="text-sm text-primary font-mono">University of Tennessee at Knoxville</p>
+                <p class="text-xs text-base-content/50 mt-0.5">May 2024 &middot; Knoxville, TN</p>
+            </div>
+        </div>
+    </section>
+
     <!-- Experience -->
     <section class="mb-16">
         <h2 class="text-xl font-semibold mb-6">Experience</h2>
@@ -64,28 +77,50 @@
             <div class="flex gap-4">
                 <div class="w-1 rounded-full bg-primary shrink-0"></div>
                 <div>
-                    <p class="font-semibold">Cloud Software Engineer</p>
-                    <p class="text-sm text-primary font-mono">Microsoft</p>
+                    <p class="font-semibold">Software Engineer</p>
+                    <p class="text-sm text-primary font-mono">Microsoft &middot; SLB, SDN/ANS</p>
                     <p class="text-xs text-base-content/50 mt-0.5">Jul 2024 &ndash; Present &middot; Redmond, WA</p>
-                    <p class="text-sm text-base-content/70 mt-2">Cloud infrastructure engineering. C++, Rust.</p>
+                    <p class="text-sm text-base-content/70 mt-2">
+                        Co-designed service architecture for managing per-container network switch policies across 9,000+ hosts.
+                        Developed a SoC agent for programmable switch integration, optimizing dataplane workflows for next-gen Azure appliances.
+                        Built a sandbox environment that reduced test cycle time by 90%.
+                    </p>
                 </div>
             </div>
             <div class="flex gap-4">
                 <div class="w-1 rounded-full bg-base-300 shrink-0"></div>
                 <div>
                     <p class="font-semibold">Undergraduate Research Assistant</p>
-                    <p class="text-sm text-primary font-mono">UTK SMART Lab</p>
+                    <p class="text-sm text-primary font-mono">Dr. Zhao Robotics Lab, UTK</p>
                     <p class="text-xs text-base-content/50 mt-0.5">Nov 2023 &ndash; Jun 2024 &middot; Knoxville, TN</p>
-                    <p class="text-sm text-base-content/70 mt-2">Robotics research for Alzheimer's care. Python, machine learning.</p>
+                    <p class="text-sm text-base-content/70 mt-2">
+                        Developed the Pepper Robot for customer service applications and built a Python library for OpenAI API integration.
+                        Authored onboarding documentation that cut setup time by 80%.
+                    </p>
                 </div>
             </div>
             <div class="flex gap-4">
                 <div class="w-1 rounded-full bg-base-300 shrink-0"></div>
                 <div>
-                    <p class="font-semibold">Developer I, Digital Applications</p>
+                    <p class="font-semibold">Undergraduate Research Assistant</p>
+                    <p class="text-sm text-primary font-mono">TennLab, UTK</p>
+                    <p class="text-xs text-base-content/50 mt-0.5">May 2023 &ndash; Nov 2023 &middot; Knoxville, TN</p>
+                    <p class="text-sm text-base-content/70 mt-2">
+                        Researched neuromorphic computing to reduce engine misfires by 90%.
+                        Created a spiking neural network simulation using Raspberry Pi and PiCAN hardware.
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <div class="w-1 rounded-full bg-base-300 shrink-0"></div>
+                <div>
+                    <p class="font-semibold">Digital Applications Intern, Developer I</p>
                     <p class="text-sm text-primary font-mono">Pilot Company</p>
                     <p class="text-xs text-base-content/50 mt-0.5">May 2022 &ndash; Nov 2023 &middot; Knoxville, TN</p>
-                    <p class="text-sm text-base-content/70 mt-2">Web and mobile application development. PostgreSQL, full-stack.</p>
+                    <p class="text-sm text-base-content/70 mt-2">
+                        Maintained React and .NET stacks during tech stack migration.
+                        Modernized legacy code and fixed design bugs on the Android team with Kotlin.
+                    </p>
                 </div>
             </div>
         </div>
@@ -95,7 +130,7 @@
     <section class="mb-16">
         <h2 class="text-xl font-semibold mb-4">Technologies</h2>
         <div class="flex flex-wrap gap-2">
-            {#each ['C++', 'Rust', 'Python', 'TypeScript', 'PostgreSQL', 'Azure', 'Machine Learning', 'Embedded Systems', 'SvelteKit', 'Arduino', 'ESP32'] as skill}
+            {#each ['C++', 'C', 'Rust', 'Python', 'JavaScript', 'C#', 'Kotlin', 'React', 'Docker', 'SQL', 'Azure', 'Git', 'Figma', 'AI/ML', 'Embedded Systems', 'SvelteKit'] as skill}
                 <span class="px-3 py-1 rounded-full bg-base-200 border border-base-300 text-xs font-mono">{skill}</span>
             {/each}
         </div>
