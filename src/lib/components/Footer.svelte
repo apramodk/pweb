@@ -2,7 +2,9 @@
     const year = new Date().getFullYear();
 </script>
 
-<footer class="border-t border-base-300 bg-base-200/50 py-8 px-4">
+<footer>
+    <div class="apple-rainbow h-0.5 w-full" aria-hidden="true"></div>
+    <div class="border-t border-base-300 bg-base-200/50 py-8 px-4">
     <div class="max-w-6xl mx-auto flex flex-col items-center gap-4">
         <div class="flex items-center gap-2 text-sm font-mono opacity-70">
             <span>&#8984;</span>
@@ -38,4 +40,19 @@
 
         <p class="text-xs opacity-30 font-mono">Built with SvelteKit</p>
     </div>
+    </div>
 </footer>
+
+<style>
+    .apple-rainbow {
+        background: linear-gradient(
+            90deg,
+            #61BB46 0%, #61BB46 16.66%,
+            #FDB827 16.66%, #FDB827 33.33%,
+            #F5821F 33.33%, #F5821F 50%,
+            #E03A3E 50%, #E03A3E 66.66%,
+            #963D97 66.66%, #963D97 83.33%,
+            #009DDC 83.33%, #009DDC 100%
+        );
+    }
+</style>
