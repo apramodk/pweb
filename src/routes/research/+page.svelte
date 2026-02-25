@@ -83,11 +83,11 @@
 
                         <p class="text-sm text-base-content/70 leading-relaxed">{r.description}</p>
 
-                        <div class="flex flex-wrap gap-1.5 mt-4">
+                        <div class="flex flex-wrap gap-2 mt-4">
                             {#each r.topics as topic, j}
                                 <span
-                                    class="px-2 py-0.5 rounded-full bg-base-200 border border-base-300 text-xs font-mono"
-                                    style="border-left: 3px solid {rainbow[(i * 3 + j) % 6]}"
+                                    class="px-2.5 py-0.5 rounded-full text-white text-xs font-mono shadow-md"
+                                    style="background-color: {rainbow[(i * 3 + j) % 6]}"
                                 >{topic}</span>
                             {/each}
                         </div>
