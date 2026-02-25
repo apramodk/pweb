@@ -128,11 +128,11 @@
     <!-- Skills -->
     <section class="mb-16">
         <h2 class="text-xl font-semibold mb-4"><span class="rainbow-underline">Technologies</span></h2>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2.5">
             {#each skills as skill, i}
                 <span
-                    class="px-3 py-1 rounded-full bg-base-200 border border-base-300 text-xs font-mono"
-                    style="border-left: 3px solid {rainbow[i % 6]}"
+                    class="px-3 py-1 rounded-full text-white text-xs font-mono shadow-md"
+                    style="background-color: {rainbow[i % 6]}"
                 >{skill}</span>
             {/each}
         </div>

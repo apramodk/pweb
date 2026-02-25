@@ -71,11 +71,11 @@
                     <p class="text-xs text-base-content/50 mt-2">{project.detail}</p>
 
                     <!-- Tech pills -->
-                    <div class="flex flex-wrap gap-1.5 mt-4">
+                    <div class="flex flex-wrap gap-2 mt-4">
                         {#each project.tech as t, i}
                             <span
-                                class="px-2 py-0.5 rounded-full bg-base-200 border border-base-300 text-xs font-mono"
-                                style="border-left: 3px solid {rainbow[i % 6]}"
+                                class="px-2.5 py-0.5 rounded-full text-white text-xs font-mono shadow-md"
+                                style="background-color: {rainbow[i % 6]}"
                             >{t}</span>
                         {/each}
                     </div>
