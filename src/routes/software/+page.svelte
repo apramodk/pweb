@@ -44,8 +44,8 @@
 
 <div class="max-w-6xl mx-auto px-6 py-12">
     <header class="mb-10">
-        <h1 class="text-3xl md:text-4xl font-bold tracking-tight">Software Projects</h1>
-        <p class="mt-2 text-base-content/60 font-mono text-sm">Developer tools, AI systems, and side projects</p>
+        <h1 class="text-3xl md:text-4xl font-bold tracking-tight"><span class="rainbow-underline">Software Projects</span></h1>
+        <p class="mt-3 text-base-content/60 font-mono text-sm">Developer tools, AI systems, and side projects</p>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -70,9 +70,13 @@
                     <p class="text-xs text-base-content/50 mt-2">{project.detail}</p>
 
                     <!-- Tech pills -->
+                    {@const rainbow = ['#61BB46', '#FDB827', '#F5821F', '#E03A3E', '#963D97', '#009DDC']}
                     <div class="flex flex-wrap gap-1.5 mt-4">
-                        {#each project.tech as t}
-                            <span class="px-2 py-0.5 rounded-full bg-base-200 border border-base-300 text-xs font-mono">{t}</span>
+                        {#each project.tech as t, i}
+                            <span
+                                class="px-2 py-0.5 rounded-full bg-base-200 border border-base-300 text-xs font-mono"
+                                style="border-left: 3px solid {rainbow[i % 6]}"
+                            >{t}</span>
                         {/each}
                     </div>
 

@@ -7,6 +7,9 @@
 
 <script lang="ts">
     import { base } from '$app/paths';
+
+    const skills = ['C++', 'C', 'Rust', 'Python', 'JavaScript', 'C#', 'Kotlin', 'React', 'Docker', 'SQL', 'Azure', 'Git', 'Figma', 'AI/ML', 'Embedded Systems', 'SvelteKit'];
+    const rainbow = ['#61BB46', '#FDB827', '#F5821F', '#E03A3E', '#963D97', '#009DDC'];
 </script>
 
 <div class="max-w-3xl mx-auto px-6 py-16 md:py-24">
@@ -59,7 +62,7 @@
 
     <!-- Education -->
     <section class="mb-16">
-        <h2 class="text-xl font-semibold mb-6">Education</h2>
+        <h2 class="text-xl font-semibold mb-6"><span class="rainbow-underline">Education</span></h2>
         <div class="flex gap-4">
             <div class="w-1 rounded-full bg-apple-blue shrink-0"></div>
             <div>
@@ -72,7 +75,7 @@
 
     <!-- Experience -->
     <section class="mb-16">
-        <h2 class="text-xl font-semibold mb-6">Experience</h2>
+        <h2 class="text-xl font-semibold mb-6"><span class="rainbow-underline">Experience</span></h2>
         <div class="space-y-6">
             <div class="flex gap-4">
                 <div class="w-1 rounded-full bg-apple-green shrink-0"></div>
@@ -124,10 +127,13 @@
 
     <!-- Skills -->
     <section class="mb-16">
-        <h2 class="text-xl font-semibold mb-4">Technologies</h2>
+        <h2 class="text-xl font-semibold mb-4"><span class="rainbow-underline">Technologies</span></h2>
         <div class="flex flex-wrap gap-2">
-            {#each ['C++', 'C', 'Rust', 'Python', 'JavaScript', 'C#', 'Kotlin', 'React', 'Docker', 'SQL', 'Azure', 'Git', 'Figma', 'AI/ML', 'Embedded Systems', 'SvelteKit'] as skill}
-                <span class="px-3 py-1 rounded-full bg-base-200 border border-base-300 text-xs font-mono">{skill}</span>
+            {#each skills as skill, i}
+                <span
+                    class="px-3 py-1 rounded-full bg-base-200 border border-base-300 text-xs font-mono"
+                    style="border-left: 3px solid {rainbow[i % 6]}"
+                >{skill}</span>
             {/each}
         </div>
     </section>
