@@ -3,6 +3,7 @@
 </svelte:head>
 
 <script lang="ts">
+    const rainbow = ['#61BB46', '#FDB827', '#F5821F', '#E03A3E', '#963D97', '#009DDC'];
     const projects = [
         {
             title: 'OpenAgent',
@@ -70,7 +71,6 @@
                     <p class="text-xs text-base-content/50 mt-2">{project.detail}</p>
 
                     <!-- Tech pills -->
-                    {@const rainbow = ['#61BB46', '#FDB827', '#F5821F', '#E03A3E', '#963D97', '#009DDC']}
                     <div class="flex flex-wrap gap-1.5 mt-4">
                         {#each project.tech as t, i}
                             <span
