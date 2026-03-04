@@ -3,26 +3,8 @@
 </svelte:head>
 
 <script lang="ts">
-    const positions = [
-        {
-            title: 'Dr. Zhao Robotics Lab',
-            institution: 'University of Tennessee at Knoxville',
-            role: 'Undergraduate Research Assistant',
-            period: 'Nov 2023 – Jun 2024',
-            location: 'Knoxville, TN',
-            description: 'Worked on deploying the Pepper Robot for customer service applications, exploring how humanoid robots can assist in real-world interactions. Built a Python library for making API calls to OpenAI due to outdated infrastructure in the lab. Authored environment setup documentation to streamline onboarding for new research assistants.',
-            topics: ['Robotics', 'Human-Robot Interaction', 'OpenAI', 'Python'],
-        },
-        {
-            title: 'TennLab',
-            institution: 'University of Tennessee at Knoxville',
-            role: 'Undergraduate Research Assistant',
-            period: 'May 2023 – Nov 2023',
-            location: 'Knoxville, TN',
-            description: 'Conducted research on neuromorphic computing applied to engine control systems, using spiking neural networks to reduce misfires. Resolved a communication error between the CAN bus interface and the training model. Built a hardware simulation using Raspberry Pi and PiCAN boards for training and testing spiking neural networks.',
-            topics: ['Neuromorphic Computing', 'Spiking Neural Networks', 'CAN Bus', 'Raspberry Pi', 'Embedded Systems'],
-        }
-    ];
+    import type { PageData } from './$types';
+    export let data: PageData;
 
     const rainbow = ['#61BB46', '#FDB827', '#F5821F', '#E03A3E', '#963D97', '#009DDC'];
 </script>
@@ -47,10 +29,45 @@
                 <span class="flex-1 text-center text-xs font-mono opacity-50">~/Research/Writing</span>
                 <div class="w-[54px]"></div>
             </div>
-            <div class="px-6 py-10 text-center">
-                <p class="text-base-content/40 font-mono text-sm">No publications yet.</p>
-                <p class="text-base-content/30 text-xs mt-1">Research docs and write-ups will appear here.</p>
-            </div>
+            {#if data.writings.length > 0}
+                <nav class="divide-y divide-base-300">
+                    {#each data.writings as w, i}
+                        <a
+                            href="/research/{w.slug}"
+                            class="flex items-center gap-3 px-4 py-3 hover:bg-base-200 transition-colors group"
+                        >
+                            <span class="text-lg" aria-hidden="true">&#128196;</span>
+                            <div class="flex-1">
+                                <p class="font-medium text-sm group-hover:text-primary transition-colors">{w.title}</p>
+                                {#if w.abstract}
+                                    <p class="text-xs opacity-50 line-clamp-2">{w.abstract}</p>
+                                {/if}
+                                <div class="flex items-center gap-2 mt-1">
+                                    {#if w.published_date}
+                                        <span class="text-xs opacity-30 font-mono">{w.published_date}</span>
+                                    {/if}
+                                    {#if w.tags?.length}
+                                        {#each w.tags.slice(0, 3) as tag, j}
+                                            <span
+                                                class="px-1.5 py-0.5 rounded-full text-white text-[10px] font-mono"
+                                                style="background-color: {rainbow[(i + j) % 6]}"
+                                            >{tag}</span>
+                                        {/each}
+                                    {/if}
+                                </div>
+                            </div>
+                            <svg class="w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                    {/each}
+                </nav>
+            {:else}
+                <div class="px-6 py-10 text-center">
+                    <p class="text-base-content/40 font-mono text-sm">No publications yet.</p>
+                    <p class="text-base-content/30 text-xs mt-1">Research docs and write-ups will appear here.</p>
+                </div>
+            {/if}
         </div>
     </section>
 
@@ -58,7 +75,7 @@
     <section>
         <h2 class="text-xl font-semibold mb-6"><span class="rainbow-underline">Research Experience</span></h2>
         <div class="space-y-8">
-            {#each positions as r, i}
+            {#each data.positions as r, i}
                 <div class="rounded-window bg-base-100 border border-base-300 shadow-window overflow-hidden">
                     <!-- Title bar -->
                     <div class="flex items-center gap-2 px-4 py-2.5 bg-base-200 border-b border-base-300">
@@ -67,14 +84,14 @@
                             <span class="w-3 h-3 rounded-full bg-mac-yellow"></span>
                             <span class="w-3 h-3 rounded-full bg-mac-green"></span>
                         </div>
-                        <span class="flex-1 text-center text-xs font-mono opacity-50 truncate">{r.title}</span>
+                        <span class="flex-1 text-center text-xs font-mono opacity-50 truncate">{r.lab_name}</span>
                         <div class="w-[54px]"></div>
                     </div>
                     <!-- Body -->
                     <div class="p-6">
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 mb-4">
                             <div>
-                                <h3 class="text-lg font-semibold">{r.title}</h3>
+                                <h3 class="text-lg font-semibold">{r.lab_name}</h3>
                                 <p class="text-sm text-primary font-mono">{r.institution}</p>
                                 <p class="text-xs text-base-content/50 mt-0.5">{r.role}</p>
                             </div>
@@ -83,14 +100,16 @@
 
                         <p class="text-sm text-base-content/70 leading-relaxed">{r.description}</p>
 
-                        <div class="flex flex-wrap gap-2 mt-4">
-                            {#each r.topics as topic, j}
-                                <span
-                                    class="px-2.5 py-0.5 rounded-full text-white text-xs font-mono shadow-md"
-                                    style="background-color: {rainbow[(i * 3 + j) % 6]}"
-                                >{topic}</span>
-                            {/each}
-                        </div>
+                        {#if r.topics?.length}
+                            <div class="flex flex-wrap gap-2 mt-4">
+                                {#each r.topics as topic, j}
+                                    <span
+                                        class="px-2.5 py-0.5 rounded-full text-white text-xs font-mono shadow-md"
+                                        style="background-color: {rainbow[(i * 3 + j) % 6]}"
+                                    >{topic}</span>
+                                {/each}
+                            </div>
+                        {/if}
                     </div>
                 </div>
             {/each}

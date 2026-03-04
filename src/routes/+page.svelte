@@ -7,8 +7,9 @@
 
 <script lang="ts">
     import { base } from '$app/paths';
+    import type { PageData } from './$types';
+    export let data: PageData;
 
-    const skills = ['C++', 'C', 'Rust', 'Python', 'JavaScript', 'C#', 'Kotlin', 'React', 'Docker', 'SQL', 'Azure', 'Git', 'Figma', 'AI/ML', 'Embedded Systems', 'SvelteKit'];
     const rainbow = ['#61BB46', '#FDB827', '#F5821F', '#E03A3E', '#963D97', '#009DDC'];
 </script>
 
@@ -63,65 +64,37 @@
     <!-- Education -->
     <section class="mb-16">
         <h2 class="text-xl font-semibold mb-6"><span class="rainbow-underline">Education</span></h2>
-        <div class="flex gap-4">
-            <div class="w-1 rounded-full bg-apple-blue shrink-0"></div>
-            <div>
-                <p class="font-semibold">Bachelor of Science in Computer Science</p>
-                <p class="text-sm text-primary font-mono">University of Tennessee at Knoxville</p>
-                <p class="text-xs text-base-content/50 mt-0.5">May 2024 &middot; Knoxville, TN</p>
+        {#each data.educations as ed}
+            <div class="flex gap-4">
+                <div class="w-1 rounded-full shrink-0" style="background-color: {ed.color || '#009DDC'}"></div>
+                <div>
+                    <p class="font-semibold">{ed.degree}</p>
+                    <p class="text-sm text-primary font-mono">{ed.institution}</p>
+                    <p class="text-xs text-base-content/50 mt-0.5">{ed.graduation_date} &middot; {ed.location}</p>
+                </div>
             </div>
-        </div>
+        {/each}
     </section>
 
     <!-- Experience -->
     <section class="mb-16">
         <h2 class="text-xl font-semibold mb-6"><span class="rainbow-underline">Experience</span></h2>
         <div class="space-y-6">
-            <div class="flex gap-4">
-                <div class="w-1 rounded-full bg-apple-green shrink-0"></div>
-                <div>
-                    <p class="font-semibold">Software Engineer</p>
-                    <p class="text-sm text-primary font-mono">Microsoft &middot; SLB, SDN/ANS</p>
-                    <p class="text-xs text-base-content/50 mt-0.5">Jul 2024 &ndash; Present &middot; Redmond, WA</p>
-                    <p class="text-sm text-base-content/70 mt-2">
-                        Container networking and programmable switch integration for Azure.
-                        SoC agent development, sandbox environments, and on-call reliability.
-                    </p>
+            {#each data.experiences as exp}
+                <div class="flex gap-4">
+                    <div class="w-1 rounded-full shrink-0" style="background-color: {exp.color || '#61BB46'}"></div>
+                    <div>
+                        <p class="font-semibold">{exp.job_title}</p>
+                        <p class="text-sm text-primary font-mono">{exp.organization}{#if exp.team} &middot; {exp.team}{/if}</p>
+                        <p class="text-xs text-base-content/50 mt-0.5">
+                            {exp.start_date} &ndash; {exp.end_date || 'Present'} &middot; {exp.location}
+                        </p>
+                        {#if exp.description}
+                            <p class="text-sm text-base-content/70 mt-2">{exp.description}</p>
+                        {/if}
+                    </div>
                 </div>
-            </div>
-            <div class="flex gap-4">
-                <div class="w-1 rounded-full bg-apple-yellow shrink-0"></div>
-                <div>
-                    <p class="font-semibold">Undergraduate Research Assistant</p>
-                    <p class="text-sm text-primary font-mono">Dr. Zhao Robotics Lab, UTK</p>
-                    <p class="text-xs text-base-content/50 mt-0.5">Nov 2023 &ndash; Jun 2024 &middot; Knoxville, TN</p>
-                    <p class="text-sm text-base-content/70 mt-2">
-                        Pepper Robot development for customer service. Built Python libraries for OpenAI integration.
-                    </p>
-                </div>
-            </div>
-            <div class="flex gap-4">
-                <div class="w-1 rounded-full bg-apple-orange shrink-0"></div>
-                <div>
-                    <p class="font-semibold">Undergraduate Research Assistant</p>
-                    <p class="text-sm text-primary font-mono">TennLab, UTK</p>
-                    <p class="text-xs text-base-content/50 mt-0.5">May 2023 &ndash; Nov 2023 &middot; Knoxville, TN</p>
-                    <p class="text-sm text-base-content/70 mt-2">
-                        Neuromorphic computing research. Spiking neural network simulation on Raspberry Pi and PiCAN hardware.
-                    </p>
-                </div>
-            </div>
-            <div class="flex gap-4">
-                <div class="w-1 rounded-full bg-apple-red shrink-0"></div>
-                <div>
-                    <p class="font-semibold">Digital Applications Intern, Developer I</p>
-                    <p class="text-sm text-primary font-mono">Pilot Company</p>
-                    <p class="text-xs text-base-content/50 mt-0.5">May 2022 &ndash; Nov 2023 &middot; Knoxville, TN</p>
-                    <p class="text-sm text-base-content/70 mt-2">
-                        Full-stack web and Android development. React, .NET, and Kotlin during a tech stack migration.
-                    </p>
-                </div>
-            </div>
+            {/each}
         </div>
     </section>
 
@@ -129,11 +102,11 @@
     <section class="mb-16">
         <h2 class="text-xl font-semibold mb-4"><span class="rainbow-underline">Technologies</span></h2>
         <div class="flex flex-wrap gap-2.5">
-            {#each skills as skill, i}
+            {#each data.skills as skill, i}
                 <span
                     class="px-3 py-1 rounded-full text-white text-xs font-mono shadow-md"
                     style="background-color: {rainbow[i % 6]}"
-                >{skill}</span>
+                >{skill.name}</span>
             {/each}
         </div>
     </section>
