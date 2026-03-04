@@ -1,289 +1,247 @@
-# Website Architecture Diagram
+# Architecture
 
-This document provides a comprehensive overview of the SvelteKit personal website architecture, including user flow, component hierarchy, and data flow.
-
-## Overview
+## System Overview
 
 ```mermaid
 flowchart TB
-    subgraph "User Entry"
-        USER[👤 User]
+    subgraph "Your Machine"
+        STRAPI["Strapi CMS<br/>localhost:1337<br/>(SQLite)"]
+        ADMIN["Admin Panel<br/>localhost:1337/admin"]
+        PUBLISH["publish.py<br/>(Claude workflow)"]
     end
 
-    subgraph "SvelteKit App"
-        subgraph "Layout Layer"
-            LAYOUT["+layout.svelte<br/>(Root Layout)"]
-            LAYOUT_TS["+layout.ts<br/>prerender: true"]
-        end
-
-        subgraph "Routes"
-            HOME["/+page.svelte<br/>(Home Page)"]
-            HCI["/HCI/+page.svelte<br/>(HCI Projects Page)"]
-        end
-
-        subgraph "Shared Components"
-            NAVBAR["Navbar.svelte"]
-            CARD["Card.svelte"]
-            IMAGES["Images.svelte"]
-            FOOTER["Footer.svelte (empty)"]
-        end
-
-        subgraph "Assets"
-            STATIC_IMAGES["Static Images<br/>(PNG, SVG)"]
-            VIDEO_FILES["Video Files<br/>(MOV)"]
-        end
+    subgraph "SvelteKit Build"
+        API["src/lib/api.ts<br/>(fetch client)"]
+        LOADERS["+page.ts loaders<br/>(build-time fetch)"]
+        PAGES["+page.svelte<br/>(templates)"]
+        BUILD["pnpm build<br/>→ static HTML"]
     end
 
-    USER --> LAYOUT
-    LAYOUT_TS -.->|config| LAYOUT
-    LAYOUT --> NAVBAR
-    LAYOUT -->|slot| HOME
-    LAYOUT -->|slot| HCI
-    
-    HCI --> CARD
-    HCI --> IMAGES
-    CARD -.->|slot content| HCI
-    IMAGES --> STATIC_IMAGES
-    HCI --> VIDEO_FILES
+    subgraph "Vercel CDN"
+        STATIC["Static HTML/CSS/JS<br/>apramodk.com"]
+    end
+
+    ADMIN -->|edit content| STRAPI
+    PUBLISH -->|POST /api/writings| STRAPI
+    API -->|GET /api/*| STRAPI
+    LOADERS --> API
+    PAGES --> LOADERS
+    BUILD --> PAGES
+    BUILD -->|vercel deploy| STATIC
 ```
 
-## User Navigation Flow
+## Data Flow
 
 ```mermaid
-flowchart LR
-    subgraph "Navigation"
-        HOME_PAGE["🏠 Home Page<br/>(/)"]
-        HCI_PAGE["📚 HCI Projects<br/>(/HCI)"]
+sequenceDiagram
+    participant CMS as Strapi CMS
+    participant Loader as +page.ts
+    participant Page as +page.svelte
+    participant Build as vite build
+    participant CDN as Vercel
+
+    Note over CMS: Content stored in SQLite
+    Build->>Loader: Execute load function
+    Loader->>CMS: GET /api/skills?sort=sort_order
+    CMS-->>Loader: JSON response
+    Loader-->>Page: { skills, experiences, ... }
+    Page->>Build: Render to static HTML
+    Build->>CDN: Deploy build/ directory
+    Note over CDN: Static site served globally
+```
+
+## Route Structure
+
+```mermaid
+graph TD
+    subgraph "Layout Layer"
+        LAYOUT["+layout.svelte<br/>(theme, navbar, footer, spotlight)"]
+        LAYOUT_TS["+layout.ts<br/>(prerender + search index)"]
     end
 
-    subgraph "Navbar Actions"
-        APK_LINK["APK Logo<br/>(→ Home)"]
-        HCI_LINK["HCI Link<br/>(→ HCI)"]
-        THEME_TOGGLE["🌓 Theme Toggle<br/>(dim ↔ retro)"]
+    subgraph "Pages"
+        HOME["/ — Home<br/>(skills, experience, education)"]
+        HCI["/HCI — HCI Projects<br/>(4 hardware projects)"]
+        SOFTWARE["/software — Software<br/>(5 projects)"]
+        RESEARCH["/research — Research<br/>(positions + writings list)"]
+        PAPER["/research/[slug]<br/>(individual paper)"]
     end
 
-    HOME_PAGE <-->|"APK button"| APK_LINK
-    HOME_PAGE <-->|"HCI button"| HCI_LINK
-    HCI_PAGE <-->|"APK button"| APK_LINK
-    HCI_PAGE <-->|"HCI button"| HCI_LINK
-    
-    THEME_TOGGLE -.->|"affects"| HOME_PAGE
-    THEME_TOGGLE -.->|"affects"| HCI_PAGE
+    subgraph "Data Sources"
+        S_SKILLS["api/skills"]
+        S_EXP["api/experiences"]
+        S_EDU["api/educations"]
+        S_HCI["api/hci-projects"]
+        S_SW["api/software-projects"]
+        S_RES["api/research-positions"]
+        S_WRITE["api/writings"]
+    end
+
+    LAYOUT_TS -->|search index| LAYOUT
+    LAYOUT -->|slot| HOME
+    LAYOUT -->|slot| HCI
+    LAYOUT -->|slot| SOFTWARE
+    LAYOUT -->|slot| RESEARCH
+    LAYOUT -->|slot| PAPER
+
+    HOME --> S_SKILLS
+    HOME --> S_EXP
+    HOME --> S_EDU
+    HCI --> S_HCI
+    SOFTWARE --> S_SW
+    RESEARCH --> S_RES
+    RESEARCH --> S_WRITE
+    PAPER --> S_WRITE
 ```
 
 ## Component Hierarchy
 
 ```mermaid
 graph TD
-    subgraph "Root"
-        APP["app.html"]
-    end
+    APP["app.html"] --> LAYOUT["+layout.svelte"]
 
-    subgraph "Layout"
-        LAYOUT["+layout.svelte"]
-    end
+    LAYOUT --> NAVBAR["Navbar.svelte<br/>(nav + theme toggle)"]
+    LAYOUT --> SPOTLIGHT["Spotlight.svelte<br/>(Cmd+K search)"]
+    LAYOUT --> FOOTER["Footer.svelte"]
+    LAYOUT --> SLOT["Page slot"]
 
-    subgraph "Pages"
-        HOME["+page.svelte (/)"]
-        HCI["+page.svelte (/HCI)"]
-    end
+    SLOT --> HOME["+page.svelte /"]
+    SLOT --> HCI["+page.svelte /HCI"]
+    SLOT --> SW["+page.svelte /software"]
+    SLOT --> RES["+page.svelte /research"]
+    SLOT --> PAPER["+page.svelte /research/[slug]"]
 
-    subgraph "Components ($lib/components)"
-        NAVBAR["Navbar.svelte"]
-        CARD["Card.svelte"]
-        FOOTER["Footer.svelte"]
-    end
-
-    subgraph "Images ($lib/images)"
-        IMAGES_COMP["images.svelte"]
-    end
-
-    APP --> LAYOUT
-    LAYOUT --> NAVBAR
-    LAYOUT -->|"<slot>"| HOME
-    LAYOUT -->|"<slot>"| HCI
-    
-    HCI --> CARD
-    HCI --> IMAGES_COMP
-    CARD -->|"<slot>"| CARD_CONTENT["Card Modal Content"]
+    HCI --> CARD["Card.svelte<br/>(collapsible modal)"]
+    HCI --> IMAGES["Images.svelte<br/>(image gallery)"]
 ```
 
-## Data Flow
-
-```mermaid
-flowchart TD
-    subgraph "State Management"
-        DARK_MODE["isDarkMode: boolean"]
-        THEME["theme: ['dim', 'retro']"]
-        EXPANDED["expanded: boolean<br/>(HCI page local)"]
-        MODAL_OPEN["isModalOpen: boolean<br/>(per Card)"]
-    end
-
-    subgraph "Layout (+layout.svelte)"
-        L_DARK[isDarkMode]
-        L_THEME[theme array]
-        BODY_THEME["data-theme binding"]
-    end
-
-    subgraph "Navbar"
-        N_DARK["isDarkMode (bound)"]
-        TOGGLE["Theme Toggle Checkbox"]
-    end
-
-    subgraph "Card Component"
-        C_TITLE["title: string"]
-        C_DESC["description: string"]
-        C_MODAL["isModalOpen: boolean"]
-        MODAL_DIALOG["Modal Dialog"]
-    end
-
-    subgraph "Images Component"
-        IM_INDEX["im_index: number"]
-        IMG_ARRAY["mp2_images array"]
-    end
-
-    %% Data flow connections
-    L_DARK <-->|"bind:isDarkMode"| N_DARK
-    N_DARK <-->|"bind:checked"| TOGGLE
-    L_DARK --> L_THEME
-    L_THEME --> BODY_THEME
-
-    C_TITLE --> MODAL_DIALOG
-    C_DESC --> MODAL_DIALOG
-    C_MODAL -->|"controls visibility"| MODAL_DIALOG
-
-    IM_INDEX --> IMG_ARRAY
-    IMG_ARRAY -->|"renders"| IMG_OUTPUT["<img> element"]
-```
-
-## Component Props & Exports
-
-```mermaid
-classDiagram
-    class Navbar {
-        +isDarkMode: boolean
-        --
-        Exports isDarkMode for binding
-        Links: Home(/), HCI(/HCI)
-    }
-
-    class Card {
-        +isModalOpen: boolean
-        +title: string
-        +description: string
-        +slot: content
-        --
-        Button triggers modal
-        Modal displays slot content
-    }
-
-    class Images {
-        +im_index: number
-        --
-        Renders image from array
-        15 images indexed 0-14
-    }
-
-    class LayoutSvelte {
-        -isDarkMode: boolean
-        -theme: string[]
-        --
-        Binds theme to body
-        Contains Navbar + slot
-    }
-
-    class HCIPage {
-        -expanded: boolean
-        --
-        toggleExpand() method
-        Contains 4 Card components
-    }
-
-    LayoutSvelte --> Navbar : contains
-    HCIPage --> Card : uses multiple
-    HCIPage --> Images : uses multiple
-```
-
-## HCI Page - Card Structure
-
-```mermaid
-flowchart TB
-    subgraph "HCI Page Grid (2 columns on md+)"
-        subgraph "Card 1"
-            MGP1["MGP1: LED Game"]
-            MGP1_CONTENT["- Capacitive touch sensors<br/>- 8x8 LED matrix<br/>- YouTube embed"]
-        end
-        
-        subgraph "Card 2"
-            MGP2["MGP2: Plant Tamagotchi"]
-            MGP2_CONTENT["- Photoresistor + Moisture sensor<br/>- LCD Display<br/>- Images component<br/>- YouTube embed"]
-        end
-        
-        subgraph "Card 3"
-            MGP3_PROTO["MGP3: Intermediate Prototype"]
-            MGP3_PROTO_CONTENT["- Brainstorming documentation<br/>- Images component<br/>- Video files (MOV)<br/>- Expandable code blocks"]
-        end
-        
-        subgraph "Card 4"
-            MGP3["MGP3: IMU Glove Controller"]
-            MGP3_CONTENT["- Final project documentation<br/>- Images + Videos<br/>- YouTube embeds<br/>- Expandable code blocks"]
-        end
-    end
-
-    MGP1 --> MGP1_CONTENT
-    MGP2 --> MGP2_CONTENT
-    MGP3_PROTO --> MGP3_PROTO_CONTENT
-    MGP3 --> MGP3_CONTENT
-```
-
-## Theme System Flow
+## Theme System
 
 ```mermaid
 sequenceDiagram
     participant User
     participant Navbar
     participant Layout
-    participant Body
     participant DaisyUI
 
     User->>Navbar: Click theme toggle
-    Navbar->>Navbar: Update isDarkMode (checkbox binding)
-    Navbar->>Layout: Two-way binding updates isDarkMode
-    Layout->>Layout: Calculate theme[Number(isDarkMode)]
-    Layout->>Body: Set data-theme attribute
-    Body->>DaisyUI: Apply theme ("dim" or "retro")
-    DaisyUI->>User: Visual theme change
+    Navbar->>Layout: bind:isDarkMode updates
+    Layout->>Layout: theme = isDarkMode ? "macdark" : "maclight"
+    Layout->>DaisyUI: document.documentElement.setAttribute("data-theme", theme)
+    DaisyUI->>User: Theme applied
+```
+
+Two custom DaisyUI themes:
+- **maclight** — warm light theme (#faf8f5 base, #3B7EA1 primary)
+- **macdark** — warm dark theme (#2a2924 base, #5BA3C9 primary)
+
+## CMS Content Types
+
+```mermaid
+classDiagram
+    class Skill {
+        +string name
+        +int sort_order
+    }
+    class Experience {
+        +string job_title
+        +string organization
+        +string team
+        +string start_date
+        +string end_date
+        +string location
+        +text description
+        +string color
+        +int sort_order
+    }
+    class Education {
+        +string degree
+        +string institution
+        +string graduation_date
+        +string location
+        +string color
+        +int sort_order
+    }
+    class SoftwareProject {
+        +string title
+        +text description
+        +text detail
+        +json tech
+        +string github_url
+        +int sort_order
+    }
+    class ResearchPosition {
+        +string lab_name
+        +string institution
+        +string role
+        +string period
+        +string location
+        +text description
+        +json topics
+        +int sort_order
+    }
+    class HciProject {
+        +string title
+        +string short_description
+        +richtext content
+        +json youtube_urls
+        +json local_videos
+        +json image_indices
+        +json code_blocks
+        +int sort_order
+    }
+    class Writing {
+        +string title
+        +uid slug
+        +text abstract
+        +richtext content
+        +json authors
+        +date published_date
+        +json tags
+        +int sort_order
+    }
 ```
 
 ## File Structure
 
 ```
-src/
-├── app.d.ts              # TypeScript declarations
-├── app.html              # HTML template
-├── lib/
-│   ├── index.ts          # Barrel exports (Navbar, Card, Images)
-│   ├── components/
-│   │   ├── Navbar.svelte # Navigation + theme toggle
-│   │   ├── Card.svelte   # Modal card component
-│   │   └── Footer.svelte # Empty (unused)
-│   └── images/
-│       ├── images.svelte # Image array component
-│       └── *.png/svg/MOV # Static assets
-└── routes/
-    ├── +layout.svelte    # Root layout (theme + navbar)
-    ├── +layout.ts        # Prerender config
-    ├── +page.svelte      # Home page (intro)
-    └── HCI/
-        └── +page.svelte  # HCI projects page
+pweb/
+├── src/
+│   ├── lib/
+│   │   ├── api.ts                  # Strapi fetch client + types
+│   │   ├── index.ts                # Component exports
+│   │   ├── components/
+│   │   │   ├── Navbar.svelte       # Nav + theme toggle
+│   │   │   ├── Card.svelte         # Modal card (HCI page)
+│   │   │   ├── Footer.svelte       # Footer
+│   │   │   └── Spotlight.svelte    # Cmd+K search
+│   │   └── images/
+│   │       └── images.svelte       # Image gallery
+│   └── routes/
+│       ├── +layout.svelte          # Root layout
+│       ├── +layout.ts              # Prerender + search index loader
+│       ├── +page.svelte            # Home
+│       ├── +page.ts                # Home loader
+│       ├── HCI/+page.{svelte,ts}   # HCI projects
+│       ├── software/+page.{svelte,ts}  # Software projects
+│       └── research/
+│           ├── +page.{svelte,ts}   # Research + writings list
+│           └── [slug]/+page.{svelte,ts} # Individual paper
+├── static/
+│   ├── videos/                     # Local MOV files
+│   └── favicons/
+├── .env                            # VITE_STRAPI_URL, VITE_STRAPI_TOKEN
+├── deploy.sh                       # Build + deploy to Vercel
+├── svelte.config.js                # adapter-static
+├── tailwind.config.js              # DaisyUI + Typography
+└── vite.config.ts
+
+~/strapi-cms/
+├── .env                            # Strapi secrets
+├── docker-compose.yml              # Docker setup (optional)
+├── seed.mjs                        # Content migration script
+├── publish.py                      # Claude publishing CLI
+└── strapi-app/                     # Strapi project
+    ├── src/api/                    # Content type schemas + routes
+    └── .tmp/data.db                # SQLite database
 ```
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|------------|
-| Framework | SvelteKit |
-| Styling | TailwindCSS + DaisyUI |
-| Build | Vite |
-| Language | TypeScript |
-| Themes | dim (dark), retro (light) |

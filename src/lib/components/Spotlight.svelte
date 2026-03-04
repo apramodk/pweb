@@ -3,6 +3,7 @@
     import { goto } from '$app/navigation';
     import { fade } from 'svelte/transition';
     import { tick } from 'svelte';
+    import { page } from '$app/stores';
 
     export let isOpen = false;
 
@@ -17,33 +18,15 @@
         href: string;
     }
 
-    const items: SearchItem[] = [
-        // Pages
+    // Fallback items if CMS data isn't loaded yet
+    const fallbackItems: SearchItem[] = [
         { title: 'Home', subtitle: 'Main page', category: 'Pages', href: `${base}/` },
         { title: 'HCI & Embedded Systems', subtitle: 'Capacitive touch, IoT, IMU drone controller', category: 'Pages', href: `${base}/HCI` },
         { title: 'Software Projects', subtitle: 'AI tools, macOS apps, browser extensions', category: 'Pages', href: `${base}/software` },
         { title: 'Research', subtitle: 'Neuromorphic computing, robotics, HCI', category: 'Pages', href: `${base}/research` },
-        // Experience
-        { title: 'Microsoft — Software Engineer', subtitle: 'Azure SLB, SDN/ANS · Container networking, programmable switches', category: 'Experience', href: `${base}/` },
-        { title: 'Dr. Zhao Robotics Lab', subtitle: 'Pepper Robot, OpenAI integration', category: 'Research', href: `${base}/research` },
-        { title: 'TennLab', subtitle: 'Neuromorphic computing, spiking neural networks, Raspberry Pi', category: 'Research', href: `${base}/research` },
-        { title: 'Pilot Company', subtitle: 'React, .NET, Kotlin, Android development', category: 'Experience', href: `${base}/` },
-        // Software Projects
-        { title: 'OpenAgent', subtitle: 'Token-efficient AI assistant for large codebases · Rust, Python', category: 'Projects', href: `${base}/software` },
-        { title: 'Canal', subtitle: 'macOS iPhone backup app · Electron, FastAPI', category: 'Projects', href: `${base}/software` },
-        { title: 'WeLiveInASociety', subtitle: 'Political transparency browser extension · JavaScript, FEC API', category: 'Projects', href: `${base}/software` },
-        { title: 'MsBuildDump', subtitle: 'Visual Studio solution parser CLI · .NET, C#', category: 'Projects', href: `${base}/software` },
-        { title: 'Dr. Watch', subtitle: "Alzheimer's detection from wearable data · Python, Svelte, ML", category: 'Projects', href: `${base}/software` },
-        // HCI Projects
-        { title: 'Capacitive Touch LED Game', subtitle: 'MPR121 sensor, Arduino, copper tape', category: 'HCI', href: `${base}/HCI` },
-        { title: 'Plant Tamagotchi', subtitle: 'IoT plant monitor with soil moisture sensing', category: 'HCI', href: `${base}/HCI` },
-        { title: 'IMU Prototyping', subtitle: 'MPU6050 gyroscope and accelerometer', category: 'HCI', href: `${base}/HCI` },
-        { title: 'IMU Drone Controller', subtitle: 'Glove-based drone control with ESP32', category: 'HCI', href: `${base}/HCI` },
-        // Skills
-        { title: 'C++ / C / Rust', subtitle: 'Systems programming languages', category: 'Skills', href: `${base}/` },
-        { title: 'Python / JavaScript / Kotlin', subtitle: 'Application development', category: 'Skills', href: `${base}/` },
-        { title: 'Docker / Azure / Git', subtitle: 'Infrastructure and tooling', category: 'Skills', href: `${base}/` },
     ];
+
+    $: items = ($page.data?.searchItems as SearchItem[]) || fallbackItems;
 
     $: filtered = query.trim() === ''
         ? items.slice(0, 8)
