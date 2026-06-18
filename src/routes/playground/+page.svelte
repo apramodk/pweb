@@ -222,7 +222,6 @@
             {:else}
                 <span class="brand">Sign in to save chats</span>
                 <button class="auth-btn" type="button" on:click={() => signIn('github')}>Continue with GitHub</button>
-                <button class="auth-btn" type="button" on:click={() => signIn('google')}>Continue with Google</button>
             {/if}
             <button class="new" type="button" on:click={newChat}>＋ New chat</button>
         </div>
