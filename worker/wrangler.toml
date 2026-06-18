@@ -1,0 +1,12 @@
+name = "chat-api"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+kv_namespaces = [
+  { binding = "RATE_LIMIT", id = "2683f00529494579b87f4accda0bc912" }
+]
+
+# After deploy, bind the custom domain in the dashboard
+# (Workers & Pages > chat-api > Settings > Domains & Routes),
+# or uncomment:
+routes = [{ pattern = "chat-api.apramodk.com", custom_domain = true }]

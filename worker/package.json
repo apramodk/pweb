@@ -1,0 +1,16 @@
+{
+  "name": "chat-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "wrangler": "^4",
+    "vitest": "^2",
+    "@cloudflare/workers-types": "^4",
+    "typescript": "^5"
+  }
+}
