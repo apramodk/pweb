@@ -15,6 +15,8 @@ export interface StreamOpts {
   endpoint: string;
   messages: { role: string; content: string }[];
   turnstileToken: string;
+  model?: string;
+  search?: boolean;
   onToken: (t: string) => void;
 }
 
@@ -22,7 +24,12 @@ export async function streamChat(opts: StreamOpts): Promise<void> {
   const res = await fetch(opts.endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: opts.messages, turnstileToken: opts.turnstileToken }),
+    body: JSON.stringify({
+      messages: opts.messages,
+      turnstileToken: opts.turnstileToken,
+      model: opts.model,
+      search: opts.search ?? false,
+    }),
   });
   if (!res.ok) {
     const err = (await res.json().catch(() => ({ error: "request failed" }))) as { error?: string };

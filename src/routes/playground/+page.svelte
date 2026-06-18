@@ -3,7 +3,7 @@
     <meta property="og:title" content="LLM Playground — Akash Pramod Kumar" />
     <meta
         property="og:description"
-        content="Chat live with an open model I self-host on a DGX Spark."
+        content="Chat live with open models I self-host on a DGX Spark."
     />
 </svelte:head>
 
@@ -17,6 +17,10 @@
     const SITE_KEY = '1x00000000000000000000AA';
     const STORE = 'pweb-chats';
 
+    const MODELS = [
+        { id: 'qwen2.5-7b', label: 'Fast 7B' },
+        { id: 'gpt-oss-120b', label: '120B 🧠' }
+    ];
     const EXAMPLES = [
         'Explain mixture-of-experts models, simply.',
         'Write a haiku about GPUs.',
@@ -30,6 +34,8 @@
     let chats: Chat[] = [];
     let currentId = '';
     let input = '';
+    let model = 'qwen2.5-7b';
+    let searchOn = false;
     let busy = false;
     let error = '';
     let turnstileToken = '';
@@ -140,6 +146,8 @@
                 endpoint: ENDPOINT,
                 messages: payload,
                 turnstileToken,
+                model,
+                search: searchOn,
                 onToken: (t) => {
                     messages[messages.length - 1].content += t;
                     messages = messages;
@@ -195,7 +203,16 @@
     <div class="main">
         <header class="topbar">
             <button class="menu" type="button" on:click={() => (sidebarOpen = !sidebarOpen)} aria-label="Menu">☰</button>
-            <div class="title">self-hosted LLM <span class="dim">· qwen2.5-7b</span></div>
+            <div class="model-pick" role="group" aria-label="Model">
+                {#each MODELS as m}
+                    <button
+                        type="button"
+                        class:sel={model === m.id}
+                        on:click={() => (model = m.id)}
+                        disabled={busy}
+                    >{m.label}</button>
+                {/each}
+            </div>
         </header>
 
         <div class="scroll" bind:this={scroller}>
@@ -204,8 +221,8 @@
                     <div class="hero-avatar" aria-hidden="true">AI</div>
                     <h1>Chat with my self-hosted LLM</h1>
                     <p>
-                        A fast 7B running on my own DGX Spark — the gpt-oss-120B lives here too,
-                        just not on this demo.
+                        Running on my own DGX Spark. Pick the fast <b>7B</b> or the <b>120B</b> up
+                        top, and toggle 🔎 web search in the box below.
                     </p>
                     <div class="examples">
                         {#each EXAMPLES as ex}
@@ -227,9 +244,13 @@
                     {/each}
                     {#if waiting}
                         <div class="row assistant">
-                            <div class="bubble assistant typing" aria-label="typing">
-                                <span></span><span></span><span></span>
-                            </div>
+                            {#if searchOn}
+                                <div class="bubble assistant searching">🔎 Searching the web…</div>
+                            {:else}
+                                <div class="bubble assistant typing" aria-label="typing">
+                                    <span></span><span></span><span></span>
+                                </div>
+                            {/if}
                         </div>
                     {/if}
                 </div>
@@ -239,14 +260,17 @@
         <div class="composer">
             <div class="composer-inner">
                 {#if error}<div class="err">{error}</div>{/if}
-                <div
-                    class="cf-turnstile"
-                    data-sitekey={SITE_KEY}
-                    data-callback="onTurnstile"
-                    data-theme="auto"
-                    data-appearance="interaction-only"
-                ></div>
+                <div class="cf-turnstile" data-sitekey={SITE_KEY} data-callback="onTurnstile" data-theme="auto" data-appearance="interaction-only"></div>
                 <form on:submit|preventDefault={send}>
+                    <button
+                        type="button"
+                        class="tool"
+                        class:on={searchOn}
+                        on:click={() => (searchOn = !searchOn)}
+                        aria-pressed={searchOn}
+                        title="Web search"
+                        aria-label="Toggle web search"
+                    >🔎</button>
                     <input
                         bind:this={box}
                         bind:value={input}
@@ -256,7 +280,9 @@
                     />
                     <button class="send" disabled={busy || !input.trim()} aria-label="Send">↑</button>
                 </form>
-                <p class="disclaimer">Open model on a DGX Spark · responses may be wrong · rate-limited demo</p>
+                <p class="disclaimer">
+                    Open model on a DGX Spark · responses may be wrong · rate-limited demo
+                </p>
             </div>
         </div>
     </div>
@@ -412,13 +438,33 @@
         color: inherit;
         padding: 0.3rem 0.6rem;
     }
-    .title {
-        font-size: 0.9rem;
-        font-weight: 600;
+    .model-pick {
+        display: inline-flex;
+        gap: 2px;
+        background: #ececf0;
+        border-radius: 9px;
+        padding: 2px;
     }
-    .title .dim {
-        color: #9a9aa0;
+    .model-pick button {
+        border: none;
+        background: transparent;
+        border-radius: 7px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.8rem;
         font-weight: 500;
+        cursor: pointer;
+        color: #6b6b70;
+        font-family: inherit;
+        transition: background 0.15s, color 0.15s;
+    }
+    .model-pick button.sel {
+        background: #fff;
+        color: #0d0d0d;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .model-pick button:disabled {
+        cursor: default;
+        opacity: 0.6;
     }
 
     .scroll {
@@ -470,6 +516,11 @@
         font-size: 0.66rem;
         color: #9a9aa0;
         margin: 0.15rem 0.1rem 0;
+    }
+    .bubble.searching {
+        font-size: 0.92rem;
+        font-style: italic;
+        color: #4a4a50;
     }
     .bubble.typing {
         display: flex;
@@ -593,8 +644,29 @@
         background: #fff;
         border: 1px solid #d9d9e0;
         border-radius: 26px;
-        padding: 0.35rem 0.35rem 0.35rem 1rem;
+        padding: 0.35rem 0.35rem 0.35rem 0.5rem;
         box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+    }
+    .tool {
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1px solid transparent;
+        background: transparent;
+        font-size: 0.95rem;
+        cursor: pointer;
+        opacity: 0.55;
+        transition: background 0.15s, opacity 0.15s;
+    }
+    .tool:hover {
+        opacity: 0.9;
+        background: #f0f0f3;
+    }
+    .tool.on {
+        opacity: 1;
+        background: #e7f1ff;
+        border-color: #b9d9ff;
     }
     .composer input {
         flex: 1;
@@ -646,7 +718,6 @@
         background: rgba(0, 0, 0, 0.35);
     }
 
-    /* ----- mobile: collapse sidebar ----- */
     @media (max-width: 820px) {
         .menu {
             display: block;
@@ -704,9 +775,22 @@
             background: rgba(26, 26, 29, 0.8);
             border-color: #2c2c30;
         }
+        .model-pick {
+            background: #2a2a30;
+        }
+        .model-pick button {
+            color: #9a9aa0;
+        }
+        .model-pick button.sel {
+            background: #45454d;
+            color: #fff;
+        }
         .bubble.assistant {
             background: #2b2b30;
             color: #fff;
+        }
+        .bubble.searching {
+            color: #b8b8c0;
         }
         .empty p {
             color: #9a9aa0;
@@ -725,6 +809,13 @@
         .composer form {
             background: #232327;
             border-color: #3a3a40;
+        }
+        .tool:hover {
+            background: #2e2e34;
+        }
+        .tool.on {
+            background: #16324f;
+            border-color: #2f5b86;
         }
     }
 

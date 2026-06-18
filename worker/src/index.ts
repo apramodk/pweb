@@ -17,8 +17,11 @@ export function rateLimitKey(ip: string, dateISO: string): string {
 }
 
 const ALLOWED_ORIGIN = "https://apramodk.com";
-const MODEL = "qwen2.5-7b";
-const MAX_TOKENS = 512;
+const MODELS: Record<string, { maxTokens: number; reasoningEffort?: string }> = {
+  "qwen2.5-7b": { maxTokens: 512 },
+  "gpt-oss-120b": { maxTokens: 900, reasoningEffort: "low" },
+};
+const DEFAULT_MODEL = "qwen2.5-7b";
 const MAX_HISTORY = 6;
 const DAILY_LIMIT = 20;
 const UPSTREAM = "https://llm.apramodk.com/v1/chat/completions";
@@ -27,6 +30,7 @@ export interface Env {
   RATE_LIMIT: KVNamespace;
   LITELLM_KEY: string;
   TURNSTILE_SECRET: string;
+  TAVILY_API_KEY: string;
 }
 
 const CORS: Record<string, string> = {
@@ -55,6 +59,26 @@ async function verifyTurnstile(token: string, ip: string, secret: string): Promi
   return data.success === true;
 }
 
+// Server-side web search via Tavily. Returns a formatted context block, or "".
+async function webSearch(query: string, key: string): Promise<string> {
+  try {
+    const res = await fetch("https://api.tavily.com/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ query, max_results: 5, search_depth: "basic", include_answer: false }),
+    });
+    if (!res.ok) return "";
+    const data = (await res.json()) as {
+      results?: { title: string; url: string; content: string }[];
+    };
+    return (data.results ?? [])
+      .map((r, i) => `[${i + 1}] ${r.title}\n${r.url}\n${r.content}`)
+      .join("\n\n");
+  } catch {
+    return "";
+  }
+}
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
@@ -62,7 +86,7 @@ export default {
 
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
 
-    let body: { messages?: unknown; turnstileToken?: string };
+    let body: { messages?: unknown; turnstileToken?: string; search?: boolean; model?: string };
     try {
       body = (await req.json()) as typeof body;
     } catch {
@@ -81,10 +105,40 @@ export default {
     const messages = trimMessages(body.messages, MAX_HISTORY);
     if (messages.length === 0) return json({ error: "no messages" }, 400);
 
+    // Optional web-search step: run Tavily on the latest user message and inject results.
+    let finalMessages: Msg[] = messages;
+    if (body.search === true && env.TAVILY_API_KEY) {
+      const lastUser = [...messages].reverse().find((m) => m.role === "user");
+      if (lastUser) {
+        const context = await webSearch(lastUser.content, env.TAVILY_API_KEY);
+        if (context) {
+          finalMessages = [
+            {
+              role: "system",
+              content:
+                "Web search results for the user's question are below. Use them to answer and cite sources inline as [1], [2], etc. If they aren't relevant, say so and answer normally.\n\n" +
+                context,
+            },
+            ...messages,
+          ];
+        }
+      }
+    }
+
+    const model = typeof body.model === "string" && MODELS[body.model] ? body.model : DEFAULT_MODEL;
+    const cfg = MODELS[model];
+    const payload: Record<string, unknown> = {
+      model,
+      messages: finalMessages,
+      max_tokens: cfg.maxTokens,
+      stream: true,
+    };
+    if (cfg.reasoningEffort) payload.reasoning_effort = cfg.reasoningEffort;
+
     const upstream = await fetch(UPSTREAM, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.LITELLM_KEY}` },
-      body: JSON.stringify({ model: MODEL, messages, max_tokens: MAX_TOKENS, stream: true }),
+      body: JSON.stringify(payload),
     });
 
     if (!upstream.ok || !upstream.body) return json({ error: "model unavailable" }, 502);
