@@ -23,8 +23,12 @@ const MODELS: Record<string, { maxTokens: number; reasoningEffort?: string }> = 
 };
 const DEFAULT_MODEL = "qwen2.5-7b";
 const MAX_HISTORY = 6;
-const DAILY_LIMIT = 20;
+const ANON_LIMIT = 5;
+const USER_LIMIT = 50;
 const UPSTREAM = "https://llm.apramodk.com/v1/chat/completions";
+// Public Supabase values (anon/publishable) — safe to ship; used to validate user tokens.
+const SUPABASE_URL = "https://rrvjdkqoeyrqqtlmtljk.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_GGGAVneA7Kz7BQqR4M3lfg_g7diX5UD";
 
 export interface Env {
   RATE_LIMIT: KVNamespace;
@@ -79,6 +83,21 @@ async function webSearch(query: string, key: string): Promise<string> {
   }
 }
 
+// Validate a Supabase access token by asking Supabase who it belongs to.
+// Version-agnostic (works regardless of how the JWT is signed). Returns user id or null.
+export async function getUserId(token: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_PUBLISHABLE_KEY },
+    });
+    if (!res.ok) return null;
+    const user = (await res.json()) as { id?: string };
+    return typeof user.id === "string" ? user.id : null;
+  } catch {
+    return null;
+  }
+}
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
@@ -86,7 +105,7 @@ export default {
 
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
 
-    let body: { messages?: unknown; turnstileToken?: string; search?: boolean; model?: string };
+    let body: { messages?: unknown; turnstileToken?: string; search?: boolean; model?: string; accessToken?: string };
     try {
       body = (await req.json()) as typeof body;
     } catch {
@@ -97,9 +116,20 @@ export default {
       return json({ error: "verification failed" }, 403);
     }
 
-    const key = rateLimitKey(ip, new Date().toISOString());
+    // Signed-in users (valid Supabase token) get a higher per-user cap; else per-IP.
+    let uid: string | null = null;
+    if (typeof body.accessToken === "string" && body.accessToken) {
+      uid = await getUserId(body.accessToken);
+    }
+    const limit = uid ? USER_LIMIT : ANON_LIMIT;
+    const key = rateLimitKey(uid ? `user:${uid}` : `ip:${ip}`, new Date().toISOString());
     const used = parseInt((await env.RATE_LIMIT.get(key)) ?? "0", 10);
-    if (used >= DAILY_LIMIT) return json({ error: "daily demo limit reached" }, 429);
+    if (used >= limit) {
+      return json(
+        { error: uid ? "daily limit reached" : "daily limit reached — sign in for more" },
+        429
+      );
+    }
     ctx.waitUntil(env.RATE_LIMIT.put(key, String(used + 1), { expirationTtl: 86400 }));
 
     const messages = trimMessages(body.messages, MAX_HISTORY);
