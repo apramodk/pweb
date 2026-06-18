@@ -14,6 +14,7 @@
 - Supabase **anon/public** URL + key may be hardcoded client-side (public by design; RLS protects data). Secrets (`SUPABASE_JWT_SECRET`, LiteLLM/Tavily/Turnstile) stay server-side only.
 - Caps: anonymous **5/day** (per IP), signed-in **50/day** (per user).
 - Access token travels in the **request body** (`accessToken` field), never an `Authorization` header (avoids CORS preflight change).
+- **REVISED (2026-06-18):** new Supabase projects sign JWTs asymmetrically, so the Worker validates a token by calling Supabase `GET /auth/v1/user` (token + publishable key) rather than HMAC-verifying with a JWT secret. No JWT secret needed; Supabase URL + publishable key are public and hardcoded in the Worker.
 - `pnpm install --frozen-lockfile` is the CI install — add deps with **pnpm** so the lockfile stays in sync.
 - Invalid/expired token → silently treat as anonymous (no hard failure).
 
