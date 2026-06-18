@@ -10,6 +10,20 @@
 <script lang="ts">
     import { onMount, afterUpdate } from 'svelte';
     import { streamChat } from '$lib/chat';
+    import MarkdownIt from 'markdown-it';
+
+    // html:false escapes any raw HTML (XSS-safe for untrusted web-search content);
+    // linkify auto-links bare URLs; breaks renders single newlines.
+    const md = new MarkdownIt({ html: false, linkify: true, breaks: true });
+    const _linkOpen =
+        md.renderer.rules.link_open ||
+        ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
+    md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
+        tokens[idx].attrSet('target', '_blank');
+        tokens[idx].attrSet('rel', 'noopener noreferrer');
+        return _linkOpen(tokens, idx, options, env, self);
+    };
+    const renderMd = (s: string): string => md.render(s);
 
     const ENDPOINT = 'https://chat-api.apramodk.com';
     // Public Turnstile *site* key. Replace before deploy.
@@ -235,7 +249,11 @@
                     {#each messages as m, i}
                         {#if !(m.role === 'assistant' && m.content === '')}
                             <div class="row {m.role}">
-                                <div class="bubble {m.role}">{m.content}</div>
+                                {#if m.role === 'assistant'}
+                                    <div class="bubble assistant md">{@html renderMd(m.content)}</div>
+                                {:else}
+                                    <div class="bubble user">{m.content}</div>
+                                {/if}
                             </div>
                             {#if m.role === 'user' && i === lastUserIndex}
                                 <div class="delivered">Delivered</div>
@@ -510,6 +528,76 @@
         background: #e9e9eb;
         color: #000;
         border-bottom-left-radius: 6px;
+    }
+    .bubble.md {
+        max-width: 100%;
+        white-space: normal;
+    }
+    .bubble.md :global(p) {
+        margin: 0 0 0.5em;
+    }
+    .bubble.md :global(p:last-child) {
+        margin-bottom: 0;
+    }
+    .bubble.md :global(ul),
+    .bubble.md :global(ol) {
+        margin: 0.4em 0;
+        padding-left: 1.3em;
+    }
+    .bubble.md :global(li) {
+        margin: 0.15em 0;
+    }
+    .bubble.md :global(a) {
+        color: #0a66d6;
+        text-decoration: underline;
+    }
+    .bubble.md :global(code) {
+        background: rgba(0, 0, 0, 0.07);
+        padding: 0.1em 0.35em;
+        border-radius: 5px;
+        font-size: 0.88em;
+    }
+    .bubble.md :global(pre) {
+        background: rgba(0, 0, 0, 0.06);
+        padding: 0.65em 0.8em;
+        border-radius: 10px;
+        overflow-x: auto;
+        margin: 0.5em 0;
+    }
+    .bubble.md :global(pre code) {
+        background: none;
+        padding: 0;
+        font-size: 0.85em;
+    }
+    .bubble.md :global(table) {
+        display: block;
+        overflow-x: auto;
+        border-collapse: collapse;
+        font-size: 0.9em;
+        margin: 0.5em 0;
+    }
+    .bubble.md :global(th),
+    .bubble.md :global(td) {
+        border: 1px solid #d3d3d8;
+        padding: 0.3em 0.55em;
+        text-align: left;
+    }
+    .bubble.md :global(th) {
+        background: rgba(0, 0, 0, 0.04);
+        font-weight: 600;
+    }
+    .bubble.md :global(h1),
+    .bubble.md :global(h2),
+    .bubble.md :global(h3) {
+        font-size: 1.05em;
+        font-weight: 700;
+        margin: 0.6em 0 0.3em;
+    }
+    .bubble.md :global(blockquote) {
+        border-left: 3px solid #c8c8cf;
+        margin: 0.5em 0;
+        padding-left: 0.7em;
+        color: #555;
     }
     .delivered {
         align-self: flex-end;
@@ -788,6 +876,24 @@
         .bubble.assistant {
             background: #2b2b30;
             color: #fff;
+        }
+        .bubble.md :global(a) {
+            color: #5aa9ff;
+        }
+        .bubble.md :global(code),
+        .bubble.md :global(pre) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .bubble.md :global(th),
+        .bubble.md :global(td) {
+            border-color: #44444c;
+        }
+        .bubble.md :global(th) {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .bubble.md :global(blockquote) {
+            border-color: #55555d;
+            color: #b5b5bd;
         }
         .bubble.searching {
             color: #b8b8c0;
