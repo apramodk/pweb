@@ -17,6 +17,7 @@ export interface StreamOpts {
   turnstileToken: string;
   model?: string;
   search?: boolean;
+  accessToken?: string;
   onToken: (t: string) => void;
 }
 
@@ -29,6 +30,7 @@ export async function streamChat(opts: StreamOpts): Promise<void> {
       turnstileToken: opts.turnstileToken,
       model: opts.model,
       search: opts.search ?? false,
+      accessToken: opts.accessToken,
     }),
   });
   if (!res.ok) {

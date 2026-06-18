@@ -11,6 +11,8 @@
     import { onMount, afterUpdate } from 'svelte';
     import { streamChat } from '$lib/chat';
     import MarkdownIt from 'markdown-it';
+    import { supabase } from '$lib/supabase';
+    import { localStore, remoteStore, type ChatStore } from '$lib/chatStore';
 
     // html:false escapes any raw HTML (XSS-safe for untrusted web-search content);
     // linkify auto-links bare URLs; breaks renders single newlines.
@@ -45,7 +47,6 @@
     // Public Turnstile *site* key. Replace before deploy.
     // Local dev: Cloudflare's always-pass test key is 1x00000000000000000000AA
     const SITE_KEY = '1x00000000000000000000AA';
-    const STORE = 'pweb-chats';
 
     const MODELS = [
         { id: 'qwen2.5-7b', label: 'Fast 7B' },
@@ -72,6 +73,8 @@
     let sidebarOpen = false;
     let scroller: HTMLElement;
     let box: HTMLInputElement;
+    let session: import('@supabase/supabase-js').Session | null = null;
+    let store: ChatStore = localStore;
 
     $: waiting =
         busy &&
@@ -87,18 +90,11 @@
     function newId(): string {
         return (crypto as any)?.randomUUID?.() ?? 'c' + Date.now();
     }
-    function persist() {
-        try {
-            localStorage.setItem(STORE, JSON.stringify(chats));
-        } catch {
-            /* ignore */
-        }
-    }
     function titleOf(ms: Msg[]): string {
         const u = ms.find((m) => m.role === 'user');
         return u ? u.content.slice(0, 42) : 'New chat';
     }
-    function saveCurrent() {
+    async function saveCurrent() {
         if (messages.length === 0) return;
         const chat: Chat = {
             id: currentId,
@@ -110,17 +106,17 @@
         if (i >= 0) chats[i] = chat;
         else chats = [chat, ...chats];
         chats = chats.sort((a, b) => b.updated - a.updated);
-        persist();
+        await store.save(chat);
     }
-    function newChat() {
-        saveCurrent();
+    async function newChat() {
+        await saveCurrent();
         currentId = newId();
         messages = [];
         error = '';
         sidebarOpen = false;
     }
-    function loadChat(id: string) {
-        saveCurrent();
+    async function loadChat(id: string) {
+        await saveCurrent();
         const c = chats.find((x) => x.id === id);
         if (c) {
             currentId = id;
@@ -128,23 +124,44 @@
         }
         sidebarOpen = false;
     }
-    function deleteChat(id: string) {
+    async function deleteChat(id: string) {
         chats = chats.filter((c) => c.id !== id);
-        persist();
+        await store.remove(id);
         if (id === currentId) {
             currentId = newId();
             messages = [];
         }
     }
 
-    onMount(() => {
-        try {
-            const raw = localStorage.getItem(STORE);
-            if (raw) chats = JSON.parse(raw);
-        } catch {
-            /* ignore */
+    async function applySession(s: typeof session) {
+        const wasAnon = !session;
+        session = s;
+        store = s ? remoteStore() : localStore;
+        if (s && wasAnon) await maybeImportLocal();
+        chats = await store.list();
+        if (!chats.find((c) => c.id === currentId)) {
+            currentId = newId();
+            messages = [];
         }
+    }
+    async function maybeImportLocal() {
+        const local = await localStore.list();
+        if (local.length && confirm(`Import ${local.length} local chat(s) into your account?`)) {
+            for (const c of local) await store.save(c);
+            localStorage.removeItem('pweb-chats');
+        }
+    }
+    function signIn(provider: 'github' | 'google') {
+        supabase.auth.signInWithOAuth({ provider, options: { redirectTo: location.href } });
+    }
+    async function signOut() {
+        await supabase.auth.signOut();
+    }
+
+    onMount(() => {
         currentId = newId();
+        supabase.auth.getSession().then(({ data }) => applySession(data.session));
+        supabase.auth.onAuthStateChange((_e, s) => applySession(s));
 
         (window as any).onTurnstile = (tok: string) => (turnstileToken = tok);
         const s = document.createElement('script');
@@ -178,6 +195,7 @@
                 turnstileToken,
                 model,
                 search: searchOn,
+                accessToken: session?.access_token,
                 onToken: (t) => {
                     messages[messages.length - 1].content += t;
                     messages = messages;
@@ -190,7 +208,7 @@
             busy = false;
             turnstileToken = '';
             (window as any).turnstile?.reset?.();
-            saveCurrent();
+            await saveCurrent();
         }
     }
 </script>
@@ -198,7 +216,14 @@
 <div class="app" class:open={sidebarOpen}>
     <aside class="sidebar">
         <div class="side-head">
-            <span class="brand">self-hosted LLM</span>
+            {#if session}
+                <span class="brand">{session.user.email ?? session.user.user_metadata?.user_name ?? 'Signed in'}</span>
+                <button class="auth-btn" type="button" on:click={signOut}>Sign out</button>
+            {:else}
+                <span class="brand">Sign in to save chats</span>
+                <button class="auth-btn" type="button" on:click={() => signIn('github')}>Continue with GitHub</button>
+                <button class="auth-btn" type="button" on:click={() => signIn('google')}>Continue with Google</button>
+            {/if}
             <button class="new" type="button" on:click={newChat}>＋ New chat</button>
         </div>
         <nav class="history" aria-label="Chat history">
@@ -372,6 +397,21 @@
         transition: background 0.15s;
     }
     .new:hover {
+        background: #f0f0f3;
+    }
+    .auth-btn {
+        text-align: left;
+        border: 1px solid #e2e2e7;
+        background: #fff;
+        border-radius: 10px;
+        padding: 0.45rem 0.7rem;
+        font-size: 0.82rem;
+        cursor: pointer;
+        font-family: inherit;
+        color: inherit;
+        transition: background 0.15s;
+    }
+    .auth-btn:hover {
         background: #f0f0f3;
     }
     .history {
@@ -861,6 +901,13 @@
             border-color: #34343a;
         }
         .new:hover {
+            background: #2a2a30;
+        }
+        .auth-btn {
+            background: #232327;
+            border-color: #34343a;
+        }
+        .auth-btn:hover {
             background: #2a2a30;
         }
         .chat-item {
