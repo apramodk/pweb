@@ -23,7 +23,23 @@
         tokens[idx].attrSet('rel', 'noopener noreferrer');
         return _linkOpen(tokens, idx, options, env, self);
     };
-    const renderMd = (s: string): string => md.render(s);
+    // If the model wrapped its whole reply in one code fence that actually contains
+    // markdown (table/bold/link/heading/list), unwrap it so it renders instead of
+    // showing as raw code.
+    function maybeUnwrap(s: string): string {
+        const t = s.trim();
+        const m = t.match(/^```[a-zA-Z]*\s*\n([\s\S]*?)\n?```$/);
+        if (!m) return s;
+        const inner = m[1];
+        const looksMarkdown =
+            /(^|\n)\s*\|.*\|/.test(inner) ||
+            /\*\*[^*]+\*\*/.test(inner) ||
+            /\[[^\]]+\]\([^)]+\)/.test(inner) ||
+            /(^|\n)#{1,6}\s/.test(inner) ||
+            /(^|\n)\s*[*-]\s/.test(inner);
+        return looksMarkdown ? inner : s;
+    }
+    const renderMd = (s: string): string => md.render(maybeUnwrap(s));
 
     const ENDPOINT = 'https://chat-api.apramodk.com';
     // Public Turnstile *site* key. Replace before deploy.

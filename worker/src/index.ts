@@ -105,25 +105,29 @@ export default {
     const messages = trimMessages(body.messages, MAX_HISTORY);
     if (messages.length === 0) return json({ error: "no messages" }, 400);
 
-    // Optional web-search step: run Tavily on the latest user message and inject results.
-    let finalMessages: Msg[] = messages;
+    // Always steer formatting; optionally add web-search context as a second system message.
+    const system: Msg[] = [
+      {
+        role: "system",
+        content:
+          "Format your replies in GitHub-flavored Markdown — use tables, lists, **bold**, and [links](https://example.com) where helpful. Do NOT wrap your entire response in a code block or triple backticks; only use code fences for actual code snippets.",
+      },
+    ];
     if (body.search === true && env.TAVILY_API_KEY) {
       const lastUser = [...messages].reverse().find((m) => m.role === "user");
       if (lastUser) {
         const context = await webSearch(lastUser.content, env.TAVILY_API_KEY);
         if (context) {
-          finalMessages = [
-            {
-              role: "system",
-              content:
-                "Web search results for the user's question are below. Use them to answer and cite sources inline as [1], [2], etc. If they aren't relevant, say so and answer normally.\n\n" +
-                context,
-            },
-            ...messages,
-          ];
+          system.push({
+            role: "system",
+            content:
+              "Web search results for the user's question are below. Use them to answer and cite sources inline as [1], [2], etc. If they aren't relevant, say so and answer normally.\n\n" +
+              context,
+          });
         }
       }
     }
+    const finalMessages: Msg[] = [...system, ...messages];
 
     const model = typeof body.model === "string" && MODELS[body.model] ? body.model : DEFAULT_MODEL;
     const cfg = MODELS[model];
