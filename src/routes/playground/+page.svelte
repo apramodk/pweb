@@ -205,7 +205,7 @@
                     <h1>Chat with my self-hosted LLM</h1>
                     <p>
                         A fast 7B running on my own DGX Spark — the gpt-oss-120B lives here too,
-                        just not on this demo. A daily limit keeps the GPU honest.
+                        just not on this demo.
                     </p>
                     <div class="examples">
                         {#each EXAMPLES as ex}
