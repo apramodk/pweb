@@ -8,22 +8,108 @@
 </svelte:head>
 
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, afterUpdate } from 'svelte';
     import { streamChat } from '$lib/chat';
 
     const ENDPOINT = 'https://chat-api.apramodk.com';
     // Public Turnstile *site* key. Replace before deploy.
     // Local dev: Cloudflare's always-pass test key is 1x00000000000000000000AA
     const SITE_KEY = '1x00000000000000000000AA';
+    const STORE = 'pweb-chats';
+
+    const EXAMPLES = [
+        'Explain mixture-of-experts models, simply.',
+        'Write a haiku about GPUs.',
+        'What can you help me with?'
+    ];
 
     type Msg = { role: 'user' | 'assistant'; content: string };
+    type Chat = { id: string; title: string; messages: Msg[]; updated: number };
+
     let messages: Msg[] = [];
+    let chats: Chat[] = [];
+    let currentId = '';
     let input = '';
     let busy = false;
     let error = '';
     let turnstileToken = '';
+    let sidebarOpen = false;
+    let scroller: HTMLElement;
+    let box: HTMLInputElement;
+
+    $: waiting =
+        busy &&
+        messages.length > 0 &&
+        messages[messages.length - 1].role === 'assistant' &&
+        messages[messages.length - 1].content === '';
+    $: lastUserIndex = messages.map((m) => m.role).lastIndexOf('user');
+
+    afterUpdate(() => {
+        if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    });
+
+    function newId(): string {
+        return (crypto as any)?.randomUUID?.() ?? 'c' + Date.now();
+    }
+    function persist() {
+        try {
+            localStorage.setItem(STORE, JSON.stringify(chats));
+        } catch {
+            /* ignore */
+        }
+    }
+    function titleOf(ms: Msg[]): string {
+        const u = ms.find((m) => m.role === 'user');
+        return u ? u.content.slice(0, 42) : 'New chat';
+    }
+    function saveCurrent() {
+        if (messages.length === 0) return;
+        const chat: Chat = {
+            id: currentId,
+            title: titleOf(messages),
+            messages: [...messages],
+            updated: Date.now()
+        };
+        const i = chats.findIndex((c) => c.id === currentId);
+        if (i >= 0) chats[i] = chat;
+        else chats = [chat, ...chats];
+        chats = chats.sort((a, b) => b.updated - a.updated);
+        persist();
+    }
+    function newChat() {
+        saveCurrent();
+        currentId = newId();
+        messages = [];
+        error = '';
+        sidebarOpen = false;
+    }
+    function loadChat(id: string) {
+        saveCurrent();
+        const c = chats.find((x) => x.id === id);
+        if (c) {
+            currentId = id;
+            messages = [...c.messages];
+        }
+        sidebarOpen = false;
+    }
+    function deleteChat(id: string) {
+        chats = chats.filter((c) => c.id !== id);
+        persist();
+        if (id === currentId) {
+            currentId = newId();
+            messages = [];
+        }
+    }
 
     onMount(() => {
+        try {
+            const raw = localStorage.getItem(STORE);
+            if (raw) chats = JSON.parse(raw);
+        } catch {
+            /* ignore */
+        }
+        currentId = newId();
+
         (window as any).onTurnstile = (tok: string) => (turnstileToken = tok);
         const s = document.createElement('script');
         s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
@@ -31,6 +117,11 @@
         s.defer = true;
         document.head.appendChild(s);
     });
+
+    function quick(t: string) {
+        input = t;
+        box?.focus();
+    }
 
     async function send() {
         if (!input.trim() || busy) return;
@@ -59,81 +150,588 @@
             messages = messages.slice(0, -1);
         } finally {
             busy = false;
-            // Turnstile tokens are single-use — reset for the next message.
             turnstileToken = '';
             (window as any).turnstile?.reset?.();
+            saveCurrent();
         }
     }
 </script>
 
-<div class="max-w-3xl mx-auto px-6 py-16 md:py-24">
-    <section class="mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold tracking-tight">
-            <span class="rainbow-underline">Playground</span>
-        </h1>
-        <p class="mt-4 text-base-content/80 leading-relaxed max-w-xl">
-            Chat with an open model running on my own hardware. This demo serves a fast
-            <span class="font-mono text-primary">7B</span> model for snappy replies — I also
-            self-host <span class="font-mono text-primary">gpt-oss-120B</span> on the same
-            DGX Spark, just not exposed here. A daily limit keeps the GPU honest.
-        </p>
-    </section>
-
-    <!-- Mac-window chat -->
-    <div class="rounded-window bg-base-100 border border-base-300 shadow-window overflow-hidden">
-        <!-- Title bar -->
-        <div class="flex items-center gap-2 px-4 py-2.5 bg-base-200 border-b border-base-300">
-            <div class="flex gap-1.5" aria-hidden="true">
-                <span class="w-3 h-3 rounded-full bg-mac-red"></span>
-                <span class="w-3 h-3 rounded-full bg-mac-yellow"></span>
-                <span class="w-3 h-3 rounded-full bg-mac-green"></span>
-            </div>
-            <span class="flex-1 text-center text-xs font-mono opacity-50">~/chat — qwen2.5-7b</span>
-            <div class="w-[54px]"></div>
+<div class="app" class:open={sidebarOpen}>
+    <aside class="sidebar">
+        <div class="side-head">
+            <span class="brand">self-hosted LLM</span>
+            <button class="new" type="button" on:click={newChat}>＋ New chat</button>
         </div>
-
-        <!-- Messages -->
-        <div class="px-4 py-5 space-y-4 min-h-[40vh] max-h-[55vh] overflow-y-auto">
-            {#if messages.length === 0}
-                <p class="text-sm opacity-40 font-mono">Ask me anything…</p>
+        <nav class="history" aria-label="Chat history">
+            {#if chats.length === 0}
+                <p class="no-chats">No chats yet</p>
             {/if}
-            {#each messages as m}
-                <div class="flex {m.role === 'user' ? 'justify-end' : 'justify-start'}">
-                    <div
-                        class="max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap
-                               {m.role === 'user'
-                            ? 'bg-primary text-primary-content'
-                            : 'bg-base-200 border border-base-300'}"
+            {#each chats as c (c.id)}
+                <button
+                    class="chat-item"
+                    class:active={c.id === currentId}
+                    type="button"
+                    on:click={() => loadChat(c.id)}
+                >
+                    <span class="chat-title">{c.title}</span>
+                    <span
+                        class="del"
+                        role="button"
+                        tabindex="0"
+                        aria-label="Delete chat"
+                        on:click|stopPropagation={() => deleteChat(c.id)}
+                        on:keydown|stopPropagation={(e) => e.key === 'Enter' && deleteChat(c.id)}
+                        >×</span
                     >
-                        {m.content}{#if m.role === 'assistant' && busy && !m.content}<span class="opacity-40">▌</span>{/if}
+                </button>
+            {/each}
+        </nav>
+        <div class="side-foot">
+            <a href="/">← Portfolio</a>
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <button class="menu" type="button" on:click={() => (sidebarOpen = !sidebarOpen)} aria-label="Menu">☰</button>
+            <div class="title">self-hosted LLM <span class="dim">· qwen2.5-7b</span></div>
+        </header>
+
+        <div class="scroll" bind:this={scroller}>
+            {#if messages.length === 0}
+                <div class="empty">
+                    <div class="hero-avatar" aria-hidden="true">AI</div>
+                    <h1>Chat with my self-hosted LLM</h1>
+                    <p>
+                        A fast 7B running on my own DGX Spark — the gpt-oss-120B lives here too,
+                        just not on this demo. A daily limit keeps the GPU honest.
+                    </p>
+                    <div class="examples">
+                        {#each EXAMPLES as ex}
+                            <button type="button" on:click={() => quick(ex)}>{ex}</button>
+                        {/each}
                     </div>
                 </div>
-            {/each}
+            {:else}
+                <div class="column">
+                    {#each messages as m, i}
+                        {#if !(m.role === 'assistant' && m.content === '')}
+                            <div class="row {m.role}">
+                                <div class="bubble {m.role}">{m.content}</div>
+                            </div>
+                            {#if m.role === 'user' && i === lastUserIndex}
+                                <div class="delivered">Delivered</div>
+                            {/if}
+                        {/if}
+                    {/each}
+                    {#if waiting}
+                        <div class="row assistant">
+                            <div class="bubble assistant typing" aria-label="typing">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         </div>
 
-        <!-- Input -->
-        <div class="border-t border-base-300 p-3 space-y-3">
-            {#if error}
-                <div class="text-sm text-mac-red font-mono px-1">{error}</div>
-            {/if}
-            <div class="cf-turnstile" data-sitekey={SITE_KEY} data-callback="onTurnstile"></div>
-            <form class="flex gap-2" on:submit|preventDefault={send}>
-                <input
-                    class="flex-1 px-3 py-2 rounded-lg bg-base-200 border border-base-300
-                           text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    bind:value={input}
-                    placeholder="Ask something…"
-                    disabled={busy}
-                />
-                <button
-                    class="px-4 py-2 rounded-lg bg-base-200 border border-base-300 text-sm
-                           font-medium shadow-btn-retro hover:shadow-none hover:translate-y-px
-                           transition-all disabled:opacity-40 disabled:shadow-none"
-                    disabled={busy || !input.trim()}
-                >
-                    {busy ? '…' : 'Send'}
-                </button>
-            </form>
+        <div class="composer">
+            <div class="composer-inner">
+                {#if error}<div class="err">{error}</div>{/if}
+                <div class="cf-turnstile" data-sitekey={SITE_KEY} data-callback="onTurnstile" data-theme="auto"></div>
+                <form on:submit|preventDefault={send}>
+                    <input
+                        bind:this={box}
+                        bind:value={input}
+                        placeholder="Message self-hosted LLM…"
+                        aria-label="Message"
+                        disabled={busy}
+                    />
+                    <button class="send" disabled={busy || !input.trim()} aria-label="Send">↑</button>
+                </form>
+                <p class="disclaimer">Open model on a DGX Spark · responses may be wrong · rate-limited demo</p>
+            </div>
         </div>
     </div>
+
+    <button class="backdrop" type="button" aria-label="Close sidebar" on:click={() => (sidebarOpen = false)}></button>
 </div>
+
+<style>
+    .app {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        background: #ffffff;
+        color: #0d0d0d;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue',
+            'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* ----- sidebar ----- */
+    .sidebar {
+        flex: 0 0 264px;
+        width: 264px;
+        display: flex;
+        flex-direction: column;
+        background: #f7f7f8;
+        border-right: 1px solid #ececf0;
+        padding: 0.75rem;
+    }
+    .side-head {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        padding-top: env(safe-area-inset-top);
+    }
+    .brand {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6b6b70;
+        padding: 0 0.4rem;
+    }
+    .new {
+        text-align: left;
+        border: 1px solid #e2e2e7;
+        background: #fff;
+        border-radius: 12px;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: inherit;
+        color: inherit;
+        transition: background 0.15s;
+    }
+    .new:hover {
+        background: #f0f0f3;
+    }
+    .history {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        margin: 0.75rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+    .no-chats {
+        color: #b0b0b5;
+        font-size: 0.8rem;
+        padding: 0.4rem;
+        margin: 0;
+    }
+    .chat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: 100%;
+        text-align: left;
+        border: none;
+        background: transparent;
+        border-radius: 9px;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.86rem;
+        cursor: pointer;
+        color: #2a2a2e;
+        font-family: inherit;
+    }
+    .chat-item:hover {
+        background: #ececf0;
+    }
+    .chat-item.active {
+        background: #e3e3e8;
+        font-weight: 500;
+    }
+    .chat-title {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .del {
+        opacity: 0;
+        color: #9a9aa0;
+        font-size: 1.1rem;
+        line-height: 1;
+        padding: 0 0.2rem;
+    }
+    .chat-item:hover .del {
+        opacity: 1;
+    }
+    .del:hover {
+        color: #ff3b30;
+    }
+    .side-foot {
+        border-top: 1px solid #ececf0;
+        padding-top: 0.6rem;
+    }
+    .side-foot a {
+        display: block;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+        color: #0a7aff;
+        text-decoration: none;
+    }
+
+    /* ----- main column ----- */
+    .main {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .topbar {
+        position: relative;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 52px;
+        padding-top: env(safe-area-inset-top);
+        border-bottom: 1px solid #ececf0;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(14px);
+    }
+    .menu {
+        position: absolute;
+        left: 0.5rem;
+        display: none;
+        border: none;
+        background: transparent;
+        font-size: 1.3rem;
+        cursor: pointer;
+        color: inherit;
+        padding: 0.3rem 0.6rem;
+    }
+    .title {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .title .dim {
+        color: #9a9aa0;
+        font-weight: 500;
+    }
+
+    .scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+    .column {
+        max-width: 46rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .row {
+        display: flex;
+        margin-top: 0.3rem;
+    }
+    .row.user {
+        justify-content: flex-end;
+    }
+    .row.assistant {
+        justify-content: flex-start;
+    }
+    .bubble {
+        max-width: 80%;
+        padding: 0.55rem 0.85rem;
+        font-size: 1.02rem;
+        line-height: 1.4;
+        border-radius: 19px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        animation: pop 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    }
+    .bubble.user {
+        background: linear-gradient(180deg, #2e9bff 0%, #0a7aff 100%);
+        color: #fff;
+        border-bottom-right-radius: 6px;
+    }
+    .bubble.assistant {
+        background: #e9e9eb;
+        color: #000;
+        border-bottom-left-radius: 6px;
+    }
+    .delivered {
+        align-self: flex-end;
+        font-size: 0.66rem;
+        color: #9a9aa0;
+        margin: 0.15rem 0.1rem 0;
+    }
+    .bubble.typing {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        padding: 0.7rem 0.85rem;
+    }
+    .bubble.typing span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #9b9ba0;
+        animation: blink 1.3s infinite ease-in-out both;
+    }
+    .bubble.typing span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+    .bubble.typing span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+    @keyframes pop {
+        from {
+            transform: translateY(6px) scale(0.96);
+            opacity: 0;
+        }
+        to {
+            transform: none;
+            opacity: 1;
+        }
+    }
+    @keyframes blink {
+        0%,
+        80%,
+        100% {
+            transform: scale(0.7);
+            opacity: 0.4;
+        }
+        40% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .empty {
+        max-width: 34rem;
+        margin: auto;
+        padding: 2rem 1.25rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100%;
+        justify-content: center;
+    }
+    .hero-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2e9bff, #0a7aff);
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    .empty h1 {
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin: 0;
+    }
+    .empty p {
+        margin: 0.6rem 0 1.4rem;
+        color: #6b6b70;
+        line-height: 1.5;
+    }
+    .examples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    .examples button {
+        border: 1px solid #e2e2e7;
+        background: #fff;
+        border-radius: 16px;
+        padding: 0.5rem 0.85rem;
+        font-size: 0.85rem;
+        color: #2a2a2e;
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+        font-family: inherit;
+    }
+    .examples button:hover {
+        border-color: #0a7aff;
+        background: #f5faff;
+    }
+
+    .composer {
+        flex: 0 0 auto;
+        padding: 0.5rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 28%);
+    }
+    .composer-inner {
+        max-width: 46rem;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .composer .err {
+        color: #ff3b30;
+        font-size: 0.8rem;
+        padding: 0 0.4rem;
+    }
+    .composer form {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #fff;
+        border: 1px solid #d9d9e0;
+        border-radius: 26px;
+        padding: 0.35rem 0.35rem 0.35rem 1rem;
+        box-shadow: 0 2px 14px rgba(0, 0, 0, 0.06);
+    }
+    .composer input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 1rem;
+        padding: 0.45rem 0;
+        font-family: inherit;
+        color: inherit;
+    }
+    .send {
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border-radius: 50%;
+        border: none;
+        background: #0a7aff;
+        color: #fff;
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+    }
+    .send:hover:not(:disabled) {
+        background: #0066e0;
+    }
+    .send:active:not(:disabled) {
+        transform: scale(0.88);
+    }
+    .send:disabled {
+        background: #cdd0d4;
+        cursor: default;
+    }
+    .disclaimer {
+        text-align: center;
+        font-size: 0.7rem;
+        color: #a0a0a6;
+        margin: 0;
+    }
+
+    .backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 55;
+        border: none;
+        background: rgba(0, 0, 0, 0.35);
+    }
+
+    /* ----- mobile: collapse sidebar ----- */
+    @media (max-width: 820px) {
+        .menu {
+            display: block;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 60;
+            transform: translateX(-100%);
+            transition: transform 0.22s ease;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
+        }
+        .app.open .sidebar {
+            transform: none;
+        }
+        .app.open .backdrop {
+            display: block;
+        }
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .app {
+            background: #1a1a1d;
+            color: #ececec;
+        }
+        .sidebar {
+            background: #131315;
+            border-color: #2c2c30;
+        }
+        .brand {
+            color: #8a8a90;
+        }
+        .new {
+            background: #232327;
+            border-color: #34343a;
+        }
+        .new:hover {
+            background: #2a2a30;
+        }
+        .chat-item {
+            color: #d8d8de;
+        }
+        .chat-item:hover {
+            background: #232327;
+        }
+        .chat-item.active {
+            background: #2c2c32;
+        }
+        .side-foot {
+            border-color: #2c2c30;
+        }
+        .topbar {
+            background: rgba(26, 26, 29, 0.8);
+            border-color: #2c2c30;
+        }
+        .bubble.assistant {
+            background: #2b2b30;
+            color: #fff;
+        }
+        .empty p {
+            color: #9a9aa0;
+        }
+        .examples button {
+            background: #232327;
+            border-color: #34343a;
+            color: #e2e2e7;
+        }
+        .examples button:hover {
+            background: #2a2a30;
+        }
+        .composer {
+            background: linear-gradient(180deg, rgba(26, 26, 29, 0) 0%, #1a1a1d 28%);
+        }
+        .composer form {
+            background: #232327;
+            border-color: #3a3a40;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bubble {
+            animation: none;
+        }
+        .bubble.typing span {
+            animation: none;
+            opacity: 0.6;
+        }
+        .sidebar {
+            transition: none;
+        }
+    }
+</style>
