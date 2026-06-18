@@ -14,7 +14,7 @@
     const ENDPOINT = 'https://chat-api.apramodk.com';
     // Public Turnstile *site* key. Replace before deploy.
     // Local dev: Cloudflare's always-pass test key is 1x00000000000000000000AA
-    const SITE_KEY = 'REPLACE_WITH_TURNSTILE_SITE_KEY';
+    const SITE_KEY = '1x00000000000000000000AA';
 
     type Msg = { role: 'user' | 'assistant'; content: string };
     let messages: Msg[] = [];
