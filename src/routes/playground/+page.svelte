@@ -239,7 +239,13 @@
         <div class="composer">
             <div class="composer-inner">
                 {#if error}<div class="err">{error}</div>{/if}
-                <div class="cf-turnstile" data-sitekey={SITE_KEY} data-callback="onTurnstile" data-theme="auto"></div>
+                <div
+                    class="cf-turnstile"
+                    data-sitekey={SITE_KEY}
+                    data-callback="onTurnstile"
+                    data-theme="auto"
+                    data-appearance="interaction-only"
+                ></div>
                 <form on:submit|preventDefault={send}>
                     <input
                         bind:this={box}
