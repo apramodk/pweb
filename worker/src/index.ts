@@ -25,6 +25,10 @@ const DEFAULT_MODEL = "qwen2.5-7b";
 const MAX_HISTORY = 6;
 const ANON_LIMIT = 5;
 const USER_LIMIT = 50;
+const AGENT_MODEL = "gpt-oss-120b";
+const AGENT_MAX_HISTORY = 16; // agent convos include tool + assistant-tool_call messages
+const AGENT_ROLES = new Set(["user", "assistant", "system", "tool"]);
+const RUN_TTL = 600; // seconds an agent run stays authorized
 const UPSTREAM = "https://llm.apramodk.com/v1/chat/completions";
 // Public Supabase values (anon/publishable) — safe to ship; used to validate user tokens.
 const SUPABASE_URL = "https://rrvjdkqoeyrqqtlmtljk.supabase.co";
@@ -98,6 +102,40 @@ export async function getUserId(token: string): Promise<string | null> {
   }
 }
 
+export type AgentMessage = {
+  role: string;
+  content: string | null;
+  tool_calls?: unknown;
+  tool_call_id?: string;
+};
+
+// KV marker key proving a runId has been verified + counted once.
+export function runMarkerKey(runId: string): string {
+  return `run:${runId}`;
+}
+
+// Like trimMessages but preserves the agent roles/fields (tool, tool_calls, null content).
+export function prepareAgentMessages(messages: unknown, max = AGENT_MAX_HISTORY): AgentMessage[] {
+  if (!Array.isArray(messages)) return [];
+  const out: AgentMessage[] = [];
+  for (const m of messages) {
+    if (!m || typeof m !== "object") continue;
+    const role = (m as { role?: unknown }).role;
+    if (typeof role !== "string" || !AGENT_ROLES.has(role)) continue;
+    const content = (m as { content?: unknown }).content;
+    const msg: AgentMessage = {
+      role,
+      content: typeof content === "string" ? content : content == null ? null : String(content),
+    };
+    const tc = (m as { tool_calls?: unknown }).tool_calls;
+    if (Array.isArray(tc)) msg.tool_calls = tc;
+    const tcid = (m as { tool_call_id?: unknown }).tool_call_id;
+    if (typeof tcid === "string") msg.tool_call_id = tcid;
+    out.push(msg);
+  }
+  return out.slice(-max);
+}
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
@@ -105,11 +143,87 @@ export default {
 
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
 
-    let body: { messages?: unknown; turnstileToken?: string; search?: boolean; model?: string; accessToken?: string };
+    let body: {
+      messages?: unknown;
+      turnstileToken?: string;
+      search?: boolean;
+      model?: string;
+      accessToken?: string;
+      agent?: boolean;
+      tools?: unknown;
+      runId?: string;
+      tool?: string;
+      args?: { query?: string };
+    };
     try {
       body = (await req.json()) as typeof body;
     } catch {
       return json({ error: "bad request" }, 400);
+    }
+
+    // ---- Tool execution (part of an already-authorized agent run) ----
+    if (typeof body.tool === "string") {
+      if (!body.runId || !(await env.RATE_LIMIT.get(runMarkerKey(body.runId)))) {
+        return json({ error: "unauthorized run" }, 403);
+      }
+      if (body.tool === "web_search") {
+        const query = typeof body.args?.query === "string" ? body.args.query : "";
+        const result = query && env.TAVILY_API_KEY ? await webSearch(query, env.TAVILY_API_KEY) : "";
+        return json({ result: result || "No results found." }, 200);
+      }
+      return json({ error: "unknown tool" }, 400);
+    }
+
+    // ---- Agent model turn (non-streaming; forwards tools to the 120B) ----
+    if (body.agent === true) {
+      const runId = typeof body.runId === "string" ? body.runId : "";
+      if (!runId) return json({ error: "missing runId" }, 400);
+
+      // First turn of a run: verify Turnstile + rate-limit once; later turns ride the marker.
+      const firstTurn = !(await env.RATE_LIMIT.get(runMarkerKey(runId)));
+      if (firstTurn) {
+        if (!body.turnstileToken || !(await verifyTurnstile(body.turnstileToken, ip, env.TURNSTILE_SECRET))) {
+          return json({ error: "verification failed" }, 403);
+        }
+        let uid: string | null = null;
+        if (typeof body.accessToken === "string" && body.accessToken) uid = await getUserId(body.accessToken);
+        const limit = uid ? USER_LIMIT : ANON_LIMIT;
+        const key = rateLimitKey(uid ? `user:${uid}` : `ip:${ip}`, new Date().toISOString());
+        const used = parseInt((await env.RATE_LIMIT.get(key)) ?? "0", 10);
+        if (used >= limit) {
+          return json({ error: uid ? "daily limit reached" : "daily limit reached — sign in for more" }, 429);
+        }
+        ctx.waitUntil(env.RATE_LIMIT.put(key, String(used + 1), { expirationTtl: 86400 }));
+        ctx.waitUntil(env.RATE_LIMIT.put(runMarkerKey(runId), "1", { expirationTtl: RUN_TTL }));
+      }
+
+      const agentMsgs = prepareAgentMessages(body.messages);
+      if (agentMsgs.length === 0) return json({ error: "no messages" }, 400);
+
+      const agentSystem: Msg = {
+        role: "system",
+        content:
+          "You are Sand, a helpful agent with tools. Use the web_search tool when the question needs current or factual information you are unsure about. After using tools, answer concisely in GitHub-flavored Markdown and cite sources inline as [1], [2]. Do NOT wrap your whole reply in a code block.",
+      };
+      const cfg = MODELS[AGENT_MODEL];
+      const payload: Record<string, unknown> = {
+        model: AGENT_MODEL,
+        messages: [agentSystem, ...agentMsgs],
+        max_tokens: cfg.maxTokens,
+        tool_choice: "auto",
+        stream: false,
+      };
+      if (Array.isArray(body.tools)) payload.tools = body.tools;
+      if (cfg.reasoningEffort) payload.reasoning_effort = cfg.reasoningEffort;
+
+      const upstream = await fetch(UPSTREAM, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.LITELLM_KEY}` },
+        body: JSON.stringify(payload),
+      });
+      if (!upstream.ok) return json({ error: "model unavailable" }, 502);
+      const data = await upstream.json();
+      return json(data, 200);
     }
 
     if (!body.turnstileToken || !(await verifyTurnstile(body.turnstileToken, ip, env.TURNSTILE_SECRET))) {
