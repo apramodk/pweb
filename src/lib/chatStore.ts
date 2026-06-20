@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
+import type { Trace } from './agent';
 
-export type Msg = { role: 'user' | 'assistant'; content: string };
+export type Msg = { role: 'user' | 'assistant'; content: string; trace?: Trace };
 export type Chat = { id: string; title: string; messages: Msg[]; updated: number };
 
 export interface ChatStore {

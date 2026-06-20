@@ -21,12 +21,14 @@ describe('summarizeResult', () => {
 describe('executeTool', () => {
 	it('posts the tool call and returns the result string', async () => {
 		const fetchMock = vi.fn(
-			async () => new Response(JSON.stringify({ result: 'hits' }), { status: 200 })
+			async (_input: RequestInfo | URL, _init?: RequestInit) =>
+				new Response(JSON.stringify({ result: 'hits' }), { status: 200 })
 		);
 		vi.stubGlobal('fetch', fetchMock);
 		const out = await executeTool('web_search', { query: 'gpus' }, { endpoint: 'https://e', runId: 'r1' });
 		expect(out).toBe('hits');
-		const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+		const init = fetchMock.mock.calls[0][1] as RequestInit;
+		const body = JSON.parse(init.body as string);
 		expect(body).toMatchObject({ tool: 'web_search', args: { query: 'gpus' }, runId: 'r1' });
 	});
 

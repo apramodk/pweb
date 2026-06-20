@@ -1,15 +1,16 @@
 <svelte:head>
-    <title>Playground — chat with my self-hosted LLM</title>
-    <meta property="og:title" content="LLM Playground — Akash Pramod Kumar" />
+    <title>Sand — chat with my self-hosted LLM</title>
+    <meta property="og:title" content="Sand — Akash Pramod Kumar" />
     <meta
         property="og:description"
-        content="Chat live with open models I self-host on a DGX Spark."
+        content="Sand: a self-hosted LLM agent harness running on my DGX Spark."
     />
 </svelte:head>
 
 <script lang="ts">
     import { onMount, afterUpdate } from 'svelte';
     import { streamChat } from '$lib/chat';
+    import { runAgent, type Trace } from '$lib/agent';
     import MarkdownIt from 'markdown-it';
     import { supabase } from '$lib/supabase';
     import { localStore, remoteStore, type ChatStore } from '$lib/chatStore';
@@ -58,7 +59,7 @@
         'What can you help me with?'
     ];
 
-    type Msg = { role: 'user' | 'assistant'; content: string };
+    type Msg = { role: 'user' | 'assistant'; content: string; trace?: Trace };
     type Chat = { id: string; title: string; messages: Msg[]; updated: number };
 
     let messages: Msg[] = [];
@@ -67,6 +68,8 @@
     let input = '';
     let model = 'qwen2.5-7b';
     let searchOn = true;
+    let agentOn = false;
+    let agentStatus = '';
     let busy = false;
     let error = '';
     let turnstileToken = '';
@@ -75,6 +78,9 @@
     let box: HTMLInputElement;
     let session: import('@supabase/supabase-js').Session | null = null;
     let store: ChatStore = localStore;
+
+    // Agent mode runs on the 120B (reliable tool-calling).
+    $: if (agentOn) model = 'gpt-oss-120b';
 
     $: waiting =
         busy &&
@@ -189,23 +195,38 @@
         messages = [...messages, userMsg, { role: 'assistant', content: '' }];
         input = '';
         try {
-            await streamChat({
-                endpoint: ENDPOINT,
-                messages: payload,
-                turnstileToken,
-                model,
-                search: searchOn,
-                accessToken: session?.access_token,
-                onToken: (t) => {
-                    messages[messages.length - 1].content += t;
-                    messages = messages;
-                }
-            });
+            if (agentOn) {
+                agentStatus = 'Thinking…';
+                const { content, trace } = await runAgent({
+                    endpoint: ENDPOINT,
+                    messages: payload,
+                    model: 'gpt-oss-120b',
+                    turnstileToken,
+                    accessToken: session?.access_token,
+                    onStatus: (s) => (agentStatus = s)
+                });
+                messages[messages.length - 1] = { role: 'assistant', content, trace };
+                messages = messages;
+            } else {
+                await streamChat({
+                    endpoint: ENDPOINT,
+                    messages: payload,
+                    turnstileToken,
+                    model,
+                    search: searchOn,
+                    accessToken: session?.access_token,
+                    onToken: (t) => {
+                        messages[messages.length - 1].content += t;
+                        messages = messages;
+                    }
+                });
+            }
         } catch (e) {
             error = e instanceof Error ? e.message : 'Something went wrong.';
             messages = messages.slice(0, -1);
         } finally {
             busy = false;
+            agentStatus = '';
             turnstileToken = '';
             (window as any).turnstile?.reset?.();
             await saveCurrent();
@@ -272,11 +293,11 @@
         <div class="scroll" bind:this={scroller}>
             {#if messages.length === 0}
                 <div class="empty">
-                    <div class="hero-avatar" aria-hidden="true">AI</div>
-                    <h1>Chat with my self-hosted LLM</h1>
+                    <div class="hero-avatar" aria-hidden="true">S</div>
+                    <h1>Sand</h1>
                     <p>
-                        Running on my own DGX Spark. Pick the fast <b>7B</b> or the <b>120B</b> up
-                        top, and toggle 🔎 web search in the box below.
+                        A chat + agent harness on my own DGX Spark. Pick the fast <b>7B</b> or the
+                        <b>120B</b> up top; toggle 🔎 web search or 🤖 agent mode in the box below.
                     </p>
                     <div class="examples">
                         {#each EXAMPLES as ex}
@@ -290,7 +311,33 @@
                         {#if !(m.role === 'assistant' && m.content === '')}
                             <div class="row {m.role}">
                                 {#if m.role === 'assistant'}
-                                    <div class="bubble assistant md">{@html renderMd(m.content)}</div>
+                                    <div class="agent-col">
+                                        <div class="bubble assistant md">{@html renderMd(m.content)}</div>
+                                        {#if m.trace}
+                                            <details class="trace">
+                                                <summary>
+                                                    🛠 {m.trace.steps.filter((s) => s.type === 'tool').length} tool call(s)
+                                                    · {m.trace.status}
+                                                </summary>
+                                                <ol>
+                                                    {#each m.trace.steps as s}
+                                                        {#if s.type === 'model'}
+                                                            <li>
+                                                                🧠 model{s.toolCalls.length ? ` → ${s.toolCalls.map((t) => t.name).join(', ')}` : ' → answer'}
+                                                                <span class="ms">{s.ms}ms</span>
+                                                            </li>
+                                                        {:else}
+                                                            <li>
+                                                                🔧 <b>{s.name}</b> <code>{s.args}</code>
+                                                                <span class="ms">{s.ms}ms</span>
+                                                                <div class="tres">{s.result}</div>
+                                                            </li>
+                                                        {/if}
+                                                    {/each}
+                                                </ol>
+                                            </details>
+                                        {/if}
+                                    </div>
                                 {:else}
                                     <div class="bubble user">{m.content}</div>
                                 {/if}
@@ -302,7 +349,9 @@
                     {/each}
                     {#if waiting}
                         <div class="row assistant">
-                            {#if searchOn}
+                            {#if agentOn}
+                                <div class="bubble assistant searching">{agentStatus || 'Thinking…'}</div>
+                            {:else if searchOn}
                                 <div class="bubble assistant searching">🔎 Searching the web…</div>
                             {:else}
                                 <div class="bubble assistant typing" aria-label="typing">
@@ -323,9 +372,19 @@
                     <button
                         type="button"
                         class="tool"
+                        class:on={agentOn}
+                        on:click={() => (agentOn = !agentOn)}
+                        aria-pressed={agentOn}
+                        title="Agent mode (multi-step tools, 120B)"
+                        aria-label="Toggle agent mode"
+                    >🤖</button>
+                    <button
+                        type="button"
+                        class="tool"
                         class:on={searchOn}
                         on:click={() => (searchOn = !searchOn)}
                         aria-pressed={searchOn}
+                        disabled={agentOn}
                         title="Web search"
                         aria-label="Toggle web search"
                     >🔎</button>
@@ -660,6 +719,48 @@
         color: #9a9aa0;
         margin: 0.15rem 0.1rem 0;
     }
+    .agent-col {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        max-width: 100%;
+    }
+    .trace {
+        margin: 0.25rem 0 0.1rem;
+        font-size: 0.78rem;
+        color: #6b6b70;
+        max-width: 100%;
+    }
+    .trace summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 0.2rem 0.1rem;
+        user-select: none;
+    }
+    .trace ol {
+        margin: 0.3rem 0 0;
+        padding-left: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .trace code {
+        background: rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        padding: 0 0.25em;
+        font-size: 0.92em;
+        overflow-wrap: anywhere;
+    }
+    .trace .ms {
+        color: #a0a0a6;
+        margin-left: 0.35rem;
+    }
+    .trace .tres {
+        margin-top: 0.15rem;
+        color: #8a8a90;
+        font-style: italic;
+        overflow-wrap: anywhere;
+    }
     .bubble.searching {
         font-size: 0.92rem;
         font-style: italic;
@@ -959,6 +1060,13 @@
         }
         .bubble.searching {
             color: #b8b8c0;
+        }
+        .trace,
+        .trace .tres {
+            color: #9a9aa0;
+        }
+        .trace code {
+            background: rgba(255, 255, 255, 0.1);
         }
         .empty p {
             color: #9a9aa0;
