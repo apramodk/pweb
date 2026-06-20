@@ -66,7 +66,7 @@
     let currentId = '';
     let input = '';
     let model = 'qwen2.5-7b';
-    let searchOn = false;
+    let searchOn = true;
     let busy = false;
     let error = '';
     let turnstileToken = '';
