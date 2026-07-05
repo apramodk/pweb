@@ -30,6 +30,11 @@ const AGENT_MAX_HISTORY = 16; // agent convos include tool + assistant-tool_call
 const AGENT_ROLES = new Set(["user", "assistant", "system", "tool"]);
 const RUN_TTL = 600; // seconds an agent run stays authorized
 const UPSTREAM = "https://llm.apramodk.com/v1/chat/completions";
+const TRANSCRIBE_UPSTREAM = "https://llm.apramodk.com/v1/audio/transcriptions";
+const TRANSCRIBE_MODEL = "whisper-1";
+export const MAX_AUDIO_BYTES = 8 * 1024 * 1024; // ~8 MB — plenty for 60s of opus/aac
+export const TRANSCRIBE_ANON_LIMIT = 20;
+export const TRANSCRIBE_USER_LIMIT = 100;
 // Public Supabase values (anon/publishable) — safe to ship; used to validate user tokens.
 const SUPABASE_URL = "https://rrvjdkqoeyrqqtlmtljk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_GGGAVneA7Kz7BQqR4M3lfg_g7diX5UD";
@@ -44,7 +49,7 @@ export interface Env {
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
 function json(obj: unknown, status: number): Response {
@@ -102,6 +107,30 @@ export async function getUserId(token: string): Promise<string | null> {
   }
 }
 
+// Map a recorded audio mime type to a file extension the transcription API
+// recognizes. Returns "" for unsupported types (used to reject uploads).
+// Chrome/Firefox record audio/webm(;codecs=opus); Safari records audio/mp4.
+export function extensionForMime(mime: string): string {
+  const base = mime.split(";")[0].trim().toLowerCase();
+  switch (base) {
+    case "audio/webm":
+      return "webm";
+    case "audio/mp4":
+    case "audio/m4a":
+    case "audio/x-m4a":
+      return "m4a";
+    case "audio/ogg":
+      return "ogg";
+    case "audio/mpeg":
+      return "mp3";
+    case "audio/wav":
+    case "audio/x-wav":
+      return "wav";
+    default:
+      return "";
+  }
+}
+
 export type AgentMessage = {
   role: string;
   content: string | null;
@@ -142,6 +171,40 @@ export default {
     if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
 
     const ip = req.headers.get("CF-Connecting-IP") ?? "unknown";
+
+    // ---- Voice dictation: forward raw audio to the gateway's Whisper ----
+    if (new URL(req.url).pathname === "/api/transcribe") {
+      const mime = req.headers.get("Content-Type") ?? "";
+      const ext = extensionForMime(mime);
+      if (!ext) return json({ error: "unsupported audio type" }, 415);
+
+      // Same tiering as chat: signed-in users get a bigger daily dictation cap.
+      const auth = req.headers.get("Authorization") ?? "";
+      const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+      const uid = bearer ? await getUserId(bearer) : null;
+      const limit = uid ? TRANSCRIBE_USER_LIMIT : TRANSCRIBE_ANON_LIMIT;
+      const key = rateLimitKey(uid ? `stt:user:${uid}` : `stt:ip:${ip}`, new Date().toISOString());
+      const used = parseInt((await env.RATE_LIMIT.get(key)) ?? "0", 10);
+      if (used >= limit) return json({ error: "daily dictation limit reached" }, 429);
+
+      const audio = await req.arrayBuffer();
+      if (audio.byteLength === 0) return json({ error: "empty audio" }, 400);
+      if (audio.byteLength > MAX_AUDIO_BYTES) return json({ error: "audio too large" }, 413);
+      ctx.waitUntil(env.RATE_LIMIT.put(key, String(used + 1), { expirationTtl: 86400 }));
+
+      const form = new FormData();
+      form.append("file", new Blob([audio], { type: mime }), `audio.${ext}`);
+      form.append("model", TRANSCRIBE_MODEL);
+
+      const upstream = await fetch(TRANSCRIBE_UPSTREAM, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${env.LITELLM_KEY}` },
+        body: form,
+      });
+      if (!upstream.ok) return json({ error: "transcription unavailable" }, 502);
+      const data = (await upstream.json().catch(() => ({}))) as { text?: unknown };
+      return json({ text: typeof data.text === "string" ? data.text : "" }, 200);
+    }
 
     let body: {
       messages?: unknown;

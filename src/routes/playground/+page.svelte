@@ -11,6 +11,7 @@
     import { onMount, afterUpdate } from 'svelte';
     import { streamChat } from '$lib/chat';
     import { runAgent, type Trace } from '$lib/agent';
+    import { pickMimeType, transcribeAudio, appendTranscript } from '$lib/voice';
     import MarkdownIt from 'markdown-it';
     import { supabase } from '$lib/supabase';
     import { localStore, remoteStore, type ChatStore } from '$lib/chatStore';
@@ -78,6 +79,15 @@
     let box: HTMLInputElement;
     let session: import('@supabase/supabase-js').Session | null = null;
     let store: ChatStore = localStore;
+
+    // Voice dictation (push-to-talk)
+    let voiceSupported = false;
+    let recording = false;
+    let transcribing = false;
+    let recorder: MediaRecorder | null = null;
+    let recChunks: Blob[] = [];
+    let recTimer: ReturnType<typeof setTimeout> | undefined;
+    const REC_MAX_MS = 60_000;
 
     // Agent mode runs on the 120B (reliable tool-calling).
     $: if (agentOn) model = 'gpt-oss-120b';
@@ -166,6 +176,7 @@
 
     onMount(() => {
         currentId = newId();
+        voiceSupported = !!navigator.mediaDevices?.getUserMedia && pickMimeType() !== null;
         supabase.auth.getSession().then(({ data }) => applySession(data.session));
         supabase.auth.onAuthStateChange((_e, s) => applySession(s));
 
@@ -180,6 +191,66 @@
     function quick(t: string) {
         input = t;
         box?.focus();
+    }
+
+    // Hold-to-record: pointerdown starts, pointerup/leave/cancel stops; the
+    // recorder's onstop fires transcription once the last chunk has landed.
+    async function startDictation() {
+        if (recording || transcribing || busy) return;
+        error = '';
+        let stream: MediaStream;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+            error = 'Microphone unavailable — allow mic access in your browser settings.';
+            return;
+        }
+        const mime = pickMimeType();
+        try {
+            recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+        } catch {
+            stream.getTracks().forEach((t) => t.stop());
+            error = 'Voice recording is not supported in this browser.';
+            return;
+        }
+        recChunks = [];
+        recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recChunks.push(e.data);
+        };
+        recorder.onstop = () => {
+            stream.getTracks().forEach((t) => t.stop());
+            void finishDictation();
+        };
+        recorder.start();
+        recording = true;
+        recTimer = setTimeout(stopDictation, REC_MAX_MS);
+    }
+    function stopDictation() {
+        clearTimeout(recTimer);
+        if (!recording) return;
+        recording = false;
+        if (recorder && recorder.state !== 'inactive') recorder.stop();
+    }
+    async function finishDictation() {
+        const blob = new Blob(recChunks, { type: recorder?.mimeType || 'audio/webm' });
+        recChunks = [];
+        if (blob.size < 100) return; // accidental tap — nothing worth transcribing
+        transcribing = true;
+        try {
+            const text = await transcribeAudio({
+                endpoint: ENDPOINT,
+                blob,
+                accessToken: session?.access_token
+            });
+            if (text) {
+                input = appendTranscript(input, text);
+                box?.focus();
+            }
+        } catch (e) {
+            error = e instanceof Error ? e.message : 'Transcription failed.';
+        } finally {
+            transcribing = false;
+        }
     }
 
     async function send() {
@@ -395,6 +466,25 @@
                         aria-label="Message"
                         disabled={busy}
                     />
+                    {#if voiceSupported}
+                        <button
+                            type="button"
+                            class="tool mic"
+                            class:rec={recording}
+                            disabled={busy || transcribing}
+                            on:pointerdown|preventDefault={startDictation}
+                            on:pointerup|preventDefault={stopDictation}
+                            on:pointerleave={stopDictation}
+                            on:pointercancel={stopDictation}
+                            on:contextmenu|preventDefault
+                            on:keydown={(e) =>
+                                (e.key === 'Enter' || e.key === ' ') && !e.repeat && startDictation()}
+                            on:keyup={(e) => (e.key === 'Enter' || e.key === ' ') && stopDictation()}
+                            aria-pressed={recording}
+                            title="Hold to dictate"
+                            aria-label="Hold to dictate"
+                        >{transcribing ? '…' : '🎤'}</button>
+                    {/if}
                     <button class="send" disabled={busy || !input.trim()} aria-label="Send">↑</button>
                 </form>
                 <p class="disclaimer">
@@ -912,6 +1002,26 @@
         background: #e7f1ff;
         border-color: #b9d9ff;
     }
+    .tool.mic {
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    .tool.mic.rec {
+        opacity: 1;
+        background: #ffe5e2;
+        border-color: #ffb4ab;
+        animation: micpulse 1.2s infinite ease-in-out;
+    }
+    .tool.mic:disabled {
+        cursor: default;
+        opacity: 0.35;
+    }
+    @keyframes micpulse {
+        50% {
+            transform: scale(1.12);
+        }
+    }
     .composer input {
         flex: 1;
         border: none;
@@ -1093,6 +1203,10 @@
             background: #16324f;
             border-color: #2f5b86;
         }
+        .tool.mic.rec {
+            background: #4a1d18;
+            border-color: #8a3a30;
+        }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1102,6 +1216,9 @@
         .bubble.typing span {
             animation: none;
             opacity: 0.6;
+        }
+        .tool.mic.rec {
+            animation: none;
         }
         .sidebar {
             transition: none;
